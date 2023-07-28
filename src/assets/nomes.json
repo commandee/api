@@ -1,0 +1,38 @@
+{
+  "alex": {
+    "nome": "Alex",
+    "sobrenome": "Alexandre",
+    "idade": 17,
+    "aniversario": "10/10/2000"
+  },
+  "babi": {
+    "nome": "Bárbara",
+    "sobrenome": "Sobrenome",
+    "idade": 17,
+    "aniversario": "17/06/2006"
+  },
+  "isa": {
+    "nome": "Isinha",
+    "sobrenome": "Silvestre",
+    "idade": 17,
+    "aniversario": "11/10/2005"
+  },
+  "lua": {
+    "nome": "Luanna",
+    "sobrenome": "Paggiaro",
+    "idade": 17,
+    "aniversario": "12/04/2006"
+  },
+  "nacrai": {
+    "nome": "Wannakry",
+    "sobrenome": "Gamma",
+    "idade": 17,
+    "aniversario": "14/03/2006"
+  },
+  "bianca": {
+    "nome": "Bianca",
+    "sobrenome": "Bianca",
+    "idade": 17,
+    "aniversario": "10/05/2006"
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "plugins": ["@typescript-eslint"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:@typescript-eslint/recommended-type-checked",
+    "prettier"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "env": {
+    "node": true,
+    "es6": true
+  },
+  "root": true,
+  "rules": {
+    "no-duplicate-case": "error",
+    "no-fallthrough": "error",
+    "no-unreachable": "error",
+    "camelcase": "warn",
+    "array-bracket-newline": ["error", "consistent"],
+    "class-methods-use-this": "error",
+    "eqeqeq": "warn",
+    "no-eval": "error",
+    "no-invalid-regexp": "error",
+    "consistent-return": "error",
+    "consistent-this": ["error", "self"],
+    "no-empty": "error",
+    "no-unused-vars": "warn",
+    "no-use-before-define": "warn",
+    "no-useless-call": "error",
+    "no-var": "error",
+    "new-parens": "error",
+    "use-isnan": "error",
+    "no-new-wrappers": "error",
+    "no-undef": "error",
+    "no-undef-init": "warn",
+    "no-underscore-dangle": "error",
+    "no-useless-escape": "warn",
+    "prefer-const": "warn",
+    "prefer-arrow-callback": "warn",
+    "prefer-template": "warn",
+    "no-nested-ternary": "error",
+    "id-blacklist": ["error", "e", "cb", "callback", "fon", "val"],
+    "no-implied-eval": "error",
+    "no-const-assign": "error",
+    "no-extra-boolean-cast": "warn",
+    "no-new-func": "error",
+    "no-new-require": "error",
+    "no-new-symbol": "error",
+    "no-return-await": "warn",
+    "no-labels": "error",
+    "no-with": "error",
+    "arrow-parens": ["warn", "always"],
+    "no-catch-shadow": "error",
+    "no-sequences": "error",
+    "no-unneeded-ternary": "warn",
+    "no-useless-concat": "warn",
+    "no-useless-return": "warn"
+  },
+  "ignorePatterns": ["node_modules/", "dist/", "coverage/", "test/"],
+  "overrides": [
+    {
+      "files": ["*.d.ts"],
+      "rules": {
+        "spaced-comment": "off"
+      }
+    }
+  ],
+  "settings": {
+    "import/resolver": {
+      "node": {
+        "extensions": [".js", ".ts"]
+      }
+    }
+  }
+}
