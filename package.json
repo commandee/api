@@ -1,10 +1,13 @@
 {
   "name": "fastify-api",
-  "private": false,
   "version": "0.0.0",
   "type": "module",
   "main": "dist/server.js",
   "license": "AGPL-3.0-or-later",
+  "author": {
+    "name": "Commandee",
+    "email": "commandee@gmail.com"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -41,5 +44,22 @@
     "fastify": "^4.20.0",
     "js-yaml": "^4.1.0",
     "typed-html": "^3.0.1"
-  }
+  },
+  "contributors": [
+    {
+      "name": "AmeMeida",
+      "email": "ame.pistache@gmail.com"
+    },
+    {
+      "name": "Gs1lver",
+      "email": "alebasi@gmail.com"
+    }
+  ],
+  "keywords": [
+    "api",
+    "fastify",
+    "vite",
+    "commandee",
+    "restaurant"
+  ]
 }
