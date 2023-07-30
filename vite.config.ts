@@ -8,7 +8,7 @@ dotenv.config();
 export default defineConfig({
   plugins: [
     ...VitePluginNode({
-      appPath: "./src/index.ts",
+      appPath: "./src/server.ts",
       adapter: "fastify"
     }),
     viteStaticCopy({

@@ -1,4 +1,4 @@
-import { FastifyInstance } from ".";
+import { FastifyInstance } from "./server";
 
 export default async function (fastify: FastifyInstance) {
   const routes = import.meta.glob("./routes/**/*.{ts,js,tsx,jsx}", {

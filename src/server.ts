@@ -9,7 +9,6 @@ import type {
   JSONSchema7
 } from "json-schema-to-ts";
 import YAML from "js-yaml";
-import { HOST, PORT } from "./enviroment";
 import fs from "fs/promises";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -90,7 +89,24 @@ fastify.register(import("@fastify/swagger"), {
       }
     ]
   },
-  prefix: "/documentation"
+  prefix: "/documentation",
+  transform: ({ schema, url }: { schema: any; url: string }) => {
+    if (schema) {
+      schema.consumes ??= [
+        "application/json",
+        "multipart/form-data",
+        "text/yaml",
+        "text/yml",
+        "application/yaml",
+        "application/yml",
+        "application/x-www-form-urlencoded"
+      ];
+
+      schema.produces ??= ["application/json"];
+    }
+
+    return { schema, url };
+  }
 });
 
 if (import.meta.env.DEV) {
@@ -145,6 +161,7 @@ fastify.register(async (fastify: FastifyInstance) => {
     {
       schema: {
         summary: "OpenAPI Docs JSON",
+        hide: true,
         description: "OpenAPI documentation for the API in JSON format",
         consumes: ["application/json"],
         produces: ["application/json"],
@@ -165,6 +182,7 @@ fastify.register(async (fastify: FastifyInstance) => {
     {
       schema: {
         summary: "OpenAPI Docs YAML",
+        hide: true,
         description: "OpenAPI documentation for the API in YAML format",
         consumes: ["application/yaml", "text/yaml", "text/yml"],
         produces: ["text/yaml"],
@@ -211,6 +229,8 @@ if (import.meta.env.PROD) {
       encoding: "utf8"
     }
   );
+
+  const { PORT, HOST } = await import("./enviroment");
 
   fastify.listen({ port: PORT, host: HOST }, (err, address) => {
     if (err) {

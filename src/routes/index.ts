@@ -1,14 +1,21 @@
-import { FastifyInstance } from "..";
+import { FastifyInstance } from "../server";
 import db from "../database/db";
+import { PORT } from "../enviroment"
 
-export default async function(fastify: FastifyInstance) {
+export default async function (fastify: FastifyInstance) {
   fastify.get("/", async (_request, reply) => {
     const items = await db
-      .selectFrom("item")
-      .innerJoin("restaurant", "item.restaurant_id", "restaurant.id")
-      .select(["item.id", "item.name", "item.price", "restaurant.name as restaurant"])
+      .selectFrom("order")
+      .innerJoin("item", "order.item_id", "item.id")
+      .innerJoin("commanda", "order.commanda_id", "commanda.id")
+      .selectAll("order")
+      .select(["item.name as item_name", "commanda.costumer as commanda"])
       .executeTakeFirst();
 
-    reply.send(items);
+    return reply.send(items);
   });
-} 
+
+  fastify.get("/port", async (_request, reply) => {
+    reply.send(PORT);
+  });
+}

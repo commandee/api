@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "start": "node ./dist/",
+    "start": "node ./dist/server.js",
     "lint": "eslint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -22,6 +22,7 @@
     "@fastify/swagger-ui": "^1.9.2",
     "@fastify/type-provider-json-schema-to-ts": "^2.2.2",
     "@fastify/type-provider-typebox": "^3.3.0",
+    "@types/bcryptjs": "^2.4.2",
     "@types/js-yaml": "^4.0.5",
     "@types/json-schema": "^7.0.12",
     "@types/node": "^20.4.2",
@@ -45,11 +46,13 @@
     "@fastify/swagger": "^8.8.0",
     "@planetscale/database": "^1.10.0",
     "@sinclair/typebox": "^0.29.6",
+    "bcryptjs": "^2.4.3",
     "dotenv": "^16.3.1",
     "fastify": "^4.20.0",
     "js-yaml": "^4.1.0",
     "kysely": "^0.26.1",
     "kysely-planetscale": "^1.4.0",
+    "nanoid": "^4.0.2",
     "typed-html": "^3.0.1"
   },
   "contributors": [
