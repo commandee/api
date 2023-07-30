@@ -14,6 +14,9 @@ ENV HOST $HOST
 ARG PORT=3000
 ENV PORT $PORT
 
+ARG DATABASE_URL
+ENV DATABASE_URL $DATABASE_URL
+
 WORKDIR /app
 COPY package*.json ./
 RUN npm install --production

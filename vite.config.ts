@@ -27,9 +27,11 @@ export default defineConfig({
   server: {
     port: Number(process.env.PORT) || 3000
   },
+  envPrefix: ["VITE_", "DATABASE_", "DB_"],
   publicDir: false,
   build: {
     target: "esnext",
-    ssrEmitAssets: true
+    ssrEmitAssets: true,
+    assetsInlineLimit: 0
   }
 });

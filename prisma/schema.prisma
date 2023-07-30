@@ -1,0 +1,125 @@
+datasource db {
+  provider     = "mysql"
+  url          = env("PRISMA_URL")
+  relationMode = "prisma"
+}
+
+generator kysely {
+  provider = "prisma-kysely"
+  output = "../src/database/generated/schema"
+  fileName = "schema.d.ts"
+  enumFileName = "enums.ts"
+}
+
+model Commanda {
+  id           String     @id @db.VarChar(255)
+  costumer     String     @db.VarChar(255)
+  table        Int?       
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurantId String     @map("restaurant_id") @db.VarChar(255)
+
+  orders Order[]
+
+  @@index(restaurantId, map: "commanda_restaurant_id_index")
+  @@map("commanda")
+}
+
+model Employee {
+  id       String @id @db.VarChar(255) @default(dbgenerated())
+  username String @unique(map: "employee_username_unique") @db.VarChar(255)
+  email    String @unique(map: "employee_email_unique") @db.VarChar(255)
+  password String @db.VarChar(255)
+
+  worksAt Employement[]
+  owns    Ownership[]
+
+  @@map("employee")
+}
+
+model Employement {
+  employee     Employee   @relation(fields: [employeeId], references: [id])
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  employeeId   String     @map("employee_id") @db.VarChar(255)
+  restaurantId String     @map("restaurant_id") @db.VarChar(255)
+
+  @@id([employeeId, restaurantId])
+  @@index(restaurantId)
+  @@index(employeeId)
+  @@map("employement")
+}
+
+model Item {
+  id    BigInt @id @unique(map: "id") @default(autoincrement()) @db.UnsignedBigInt
+  name  String @db.VarChar(255)
+  price Int
+
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurantId String     @map("restaurant_id") @db.VarChar(255)
+
+  orders Order[]
+
+  @@index([restaurantId])
+  @@map("item")
+}
+
+model Order {
+  id           BigInt     @id @unique(map: "id") @default(autoincrement()) @db.UnsignedBigInt
+  commandaId   String     @map("commanda_id") @db.VarChar(255)
+  commanda     Commanda   @relation(fields: [commandaId], references: [id])
+  item         Item       @relation(fields: [itemId], references: [id])
+  itemId       BigInt     @map("item_id") @db.UnsignedBigInt
+  restaurantId String     @map("restaurant_id") @db.VarChar(255)
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  quantity     Int       @default(1)
+  priority     Priority   @default(low)
+  status       Status     @default(pending)
+  notes        String?    @db.VarChar(512)
+
+  @@index(commandaId, map: "order_commanda_id_index")
+  @@index(restaurantId, map: "order_restaurant_id_index")
+  @@index(itemId, map: "order_item_id_index")
+  @@map("order")
+}
+
+model Ownership {
+  owner        Employee   @relation(fields: [ownerId], references: [id])
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  ownerId      String     @map("owner_id") @db.VarChar(255)
+  restaurantId String     @map("restaurant_id") @db.VarChar(255)
+
+  @@id([ownerId, restaurantId])
+  @@map("ownership")
+  @@index(ownerId)
+  @@index(restaurantId)
+}
+
+model Restaurant {
+  id      String @id @db.VarChar(255) @default(dbgenerated())
+  name    String @unique(map: "restaurant_name_unique") @db.VarChar(255)
+  address String @db.VarChar(255)
+
+  owners       Ownership[]
+  employements Employement[]
+  commandas    Commanda[]
+  items        Item[]
+  orders       Order[]
+
+  @@index(name, map: "restaurant_name_index")
+  @@map("restaurant")
+}
+
+enum Priority {
+  low
+  medium
+  high
+
+  @@map("priority")
+}
+
+enum Status {
+  pending
+  inProgress @map("in_progress")
+  done
+
+  @@map("status")
+}

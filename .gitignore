@@ -16,6 +16,8 @@ dist-ssr
 
 **/.env
 
+src/database/generated
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
