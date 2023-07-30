@@ -1,8 +1,13 @@
 import dotenv from "dotenv";
+import { PlanetScaleDialectConfig } from "kysely-planetscale";
 
 dotenv.config();
 
 export const PORT = Number(process.env.PORT) || 3000;
 export const HOST = process.env.HOST || "localhost";
 
-export const DATABASE_URL = process.env.DATABASE_URL!;
+export const DB_OPTIONS = {
+  host: process.env.DATABASE_HOST!,
+  username: process.env.DATABASE_USERNAME!,
+  password: process.env.DATABASE_PASSWORD!
+} satisfies PlanetScaleDialectConfig;

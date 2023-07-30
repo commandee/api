@@ -1,11 +1,9 @@
-import { MysqlDialect, Kysely } from "kysely";
-import mysql from "mysql2/promise";
+import { Kysely } from "kysely";
 import { DB } from "./generated/schema/schema";
-import { DATABASE_URL } from "../enviroment";
+import { DB_OPTIONS } from "../enviroment";
+import { PlanetScaleDialect } from "kysely-planetscale";
 
-const dialect = new MysqlDialect({
-  pool: mysql.createPool(DATABASE_URL)
-});
+const dialect = new PlanetScaleDialect(DB_OPTIONS)
 
 export default new Kysely<DB>({ 
   dialect,

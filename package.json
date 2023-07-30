@@ -43,11 +43,13 @@
     "@fastify/multipart": "^7.7.2",
     "@fastify/static": "^6.10.2",
     "@fastify/swagger": "^8.8.0",
+    "@planetscale/database": "^1.10.0",
     "@sinclair/typebox": "^0.29.6",
     "dotenv": "^16.3.1",
     "fastify": "^4.20.0",
     "js-yaml": "^4.1.0",
     "kysely": "^0.26.1",
+    "kysely-planetscale": "^1.4.0",
     "typed-html": "^3.0.1"
   },
   "contributors": [
