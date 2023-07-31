@@ -1,6 +1,6 @@
 import { FastifyInstance } from "../server";
 import db from "../database/db";
-import { PORT } from "../enviroment"
+import { PORT } from "../enviroment";
 
 export default async function (fastify: FastifyInstance) {
   fastify.get("/", async (_request, reply) => {

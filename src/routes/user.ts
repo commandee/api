@@ -55,7 +55,7 @@ export default async function (fastify: FastifyInstance) {
   );
 
   fastify.get(
-    "/:id",
+    "/:username",
     {
       schema: {
         summary: "Get user",
@@ -63,14 +63,9 @@ export default async function (fastify: FastifyInstance) {
         params: {
           type: "object",
           properties: {
-            id: {
-              type: "string",
-              minLength: 21,
-              maxLength: 21,
-              description: "The NanoID of the user to retrieve"
-            }
+            username: { type: "string", minLength: 3, maxLength: 255 }
           },
-          required: ["id"],
+          required: ["username"],
           additionalProperties: false
         },
         response: {
@@ -79,9 +74,10 @@ export default async function (fastify: FastifyInstance) {
             properties: {
               id: { type: "string", minLength: 21, maxLength: 21 },
               username: { type: "string", minLength: 3, maxLength: 255 },
-              email: { type: "string", format: "email", maxLength: 255 }
+              email: { type: "string", format: "email", maxLength: 255 },
+              password: { type: "string", minLength: 60, maxLength: 60 }
             },
-            required: ["id", "username", "email"],
+            required: ["id", "username", "email", "password"],
             additionalProperties: false
           },
           404: {
@@ -95,12 +91,12 @@ export default async function (fastify: FastifyInstance) {
       } as const
     },
     async (request, reply) => {
-      const { id } = request.params;
+      const { username } = request.params;
 
       const user = await db
         .selectFrom("employee")
-        .where("id", "=", id)
-        .select(["id", "username", "email"])
+        .where("employee.username", "=", username)
+        .select(["id", "username", "email", "password"])
         .executeTakeFirst();
 
       if (!user) {
