@@ -1,11 +1,14 @@
-import type { Employee } from "../database/generated/schema/schema";
 import db from "../database/db";
 import { encrypt } from "../crypt";
 import { nanoid } from "nanoid/async";
 import bcrypt from "bcryptjs";
 
-export async function create(employee: Omit<Employee, "id">) {
-  const [id, encryptedPassword] = await Promise.all([
+export async function create(employee: {
+  username: string;
+  email: string;
+  password: string;
+}) {
+  const [public_id, encryptedPassword] = await Promise.all([
     nanoid(),
     encrypt(employee.password)
   ]);
@@ -14,7 +17,8 @@ export async function create(employee: Omit<Employee, "id">) {
     .insertInto("employee")
     .values({
       ...employee,
-      id,
+      id: undefined,
+      public_id,
       password: encryptedPassword
     })
     .executeTakeFirst();

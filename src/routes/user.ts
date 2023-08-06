@@ -1,8 +1,6 @@
 import { JSONSchema7 } from "json-schema";
 import { FastifyInstance } from "../server";
 import db from "../database/db";
-import { encrypt } from "../crypt";
-import { nanoid } from "nanoid/async";
 import bcrypt from "bcryptjs";
 import * as UserControl from "../controllers/employee_controller";
 
@@ -20,37 +18,25 @@ export default async function (fastify: FastifyInstance) {
             email: { type: "string", format: "email", maxLength: 255 },
             password: { type: "string", minLength: 8, maxLength: 255 }
           },
-          required: ["username", "email", "password"]
+          required: ["username", "email", "password"],
+          additionalProperties: false
         },
         response: {
-          201: { type: "boolean" },
+          201: { type: "string", const: "User created successfully" },
           500: { type: "null" }
         }
       } as const
     },
     async (request, reply) => {
-      const { username, email, password } = request.body;
+      const user = request.body;
 
-      const [id, encryptedPassword] = await Promise.all([
-        nanoid(),
-        encrypt(password)
-      ]);
+      const res = await UserControl.create(user);
 
-      const user = await db
-        .insertInto("employee")
-        .values({
-          id,
-          username,
-          email,
-          password: encryptedPassword
-        })
-        .execute();
-
-      if (!user[0]) {
+      if (res.numInsertedOrUpdatedRows !== 1n) {
         return reply.code(500).send();
       }
 
-      return reply.code(201).send(true);
+      return reply.code(201).send("User created successfully");
     }
   );
 
