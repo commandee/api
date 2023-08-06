@@ -49,27 +49,31 @@ export default async function (fastify: FastifyInstance) {
     }
   );
 
-  fastify.get("/restaurant/:restaurant", {
-    schema: {
-      summary: "Get all commandas from a restaurant",
-      params: {
-        type: "object",
-        properties: {
-          restaurant: {
-            type: "string",
-            minLength: 16,
-            maxLength: 16,
-            description: "Public ID of the restaurant"
-          }
-        },
-        required: ["restaurant"],
-        additionalProperties: false
-      }
-    } as const
-  }, async (request, reply) => {
-    const { restaurant } = request.params;
-    const commandas = await commandaControl.getAllFrom(restaurant);
+  fastify.get(
+    "/restaurant/:restaurant",
+    {
+      schema: {
+        summary: "Get all commandas from a restaurant",
+        params: {
+          type: "object",
+          properties: {
+            restaurant: {
+              type: "string",
+              minLength: 16,
+              maxLength: 16,
+              description: "Public ID of the restaurant"
+            }
+          },
+          required: ["restaurant"],
+          additionalProperties: false
+        }
+      } as const
+    },
+    async (request, reply) => {
+      const { restaurant } = request.params;
+      const commandas = await commandaControl.getAllFrom(restaurant);
 
-    reply.status(200).send(commandas);
-  });
+      reply.status(200).send(commandas);
+    }
+  );
 }
