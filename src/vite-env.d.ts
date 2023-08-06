@@ -6,6 +6,7 @@ import type { TSchema } from "@sinclair/typebox";
 
 declare global {
   const elements: typeof import("typed-html");
+  type JSONSchema = JSONSchema7;
 }
 
 declare module "fastify" {
