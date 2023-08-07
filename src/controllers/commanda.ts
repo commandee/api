@@ -8,28 +8,11 @@ export async function create(commanda: {
 }) {
   const public_id = await genID();
 
-  console.log(
-    db
-      .insertInto("commanda")
-      .values(({ selectFrom }) => ({
-        costumer: commanda.costumer,
-        table: commanda.table ?? null,
-        id: undefined,
-        public_id,
-        restaurant_id: selectFrom("restaurant")
-          .select("id as restaurant_id")
-          .where("public_id", "=", commanda.restaurant)
-      }))
-      .compile().sql
-  );
-
-  console.log("Table", commanda.table);
-
   const result = await db
     .insertInto("commanda")
     .values(({ selectFrom }) => ({
       costumer: commanda.costumer,
-      table: commanda.table ?? undefined,
+      table: commanda.table || undefined,
       id: undefined,
       public_id,
       restaurant_id: selectFrom("restaurant")

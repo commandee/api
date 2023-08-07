@@ -1,6 +1,6 @@
 import { FastifyInstance } from "../server";
 
-import * as commandaControl from "../controllers/commanda_controller";
+import * as commandaControl from "../controllers/commanda";
 
 export default async function (fastify: FastifyInstance) {
   fastify.post(
@@ -19,6 +19,7 @@ export default async function (fastify: FastifyInstance) {
             },
             table: {
               type: "integer",
+              minimum: 1,
               maximum: 255,
               description: "Number of the table for the commanda (optional)",
               nullable: true
