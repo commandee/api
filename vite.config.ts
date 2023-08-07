@@ -22,7 +22,7 @@ export default defineConfig({
   ],
   esbuild: {
     jsxFactory: "elements.createElement",
-    jsxInject: `import * as elements from "typed-html/dist/src/elements"`
+    jsxInject: 'import * as elements from "typed-html/dist/src/elements";'
   },
   server: {
     port: Number(process.env.PORT) || 3000
@@ -32,6 +32,10 @@ export default defineConfig({
   build: {
     target: "esnext",
     ssrEmitAssets: true,
-    assetsInlineLimit: 0
+    assetsInlineLimit: 0,
+    minify: "terser",
+    rollupOptions: {
+      treeshake: true
+    }
   }
 });

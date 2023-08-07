@@ -19,7 +19,7 @@ ENV DATABASE_URL $DATABASE_URL
 
 WORKDIR /app
 COPY package*.json ./
-RUN npm install --production
+RUN npm install --omit=dev
 COPY --from=build /app/dist ./dist
 CMD ["npm", "start"]
 EXPOSE $PORT
