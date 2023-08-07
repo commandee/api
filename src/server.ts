@@ -15,6 +15,9 @@ import type {
 } from "json-schema-to-ts";
 import YAML from "js-yaml";
 import fs from "fs/promises";
+import router from "./router";
+import * as userControl from "./controllers/employee";
+import * as enviroment from "./enviroment";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 interface TypeProvider<
@@ -256,7 +259,7 @@ fastify.register(async (fastify: FastifyInstance) => {
   }
 });
 
-fastify.register(import("./router"));
+fastify.register(router);
 
 await fastify.ready();
 
@@ -277,7 +280,7 @@ if (import.meta.env.PROD) {
     }
   );
 
-  const { PORT, HOST } = await import("./enviroment");
+  const { PORT, HOST } = enviroment;
 
   fastify.listen({ port: PORT, host: HOST }, (err, address) => {
     if (err) {

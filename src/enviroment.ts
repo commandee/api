@@ -5,6 +5,8 @@ dotenv.config();
 
 export const PORT = Number(process.env.PORT) || 3000;
 export const HOST = process.env.HOST || "localhost";
+export const JWT_SECRET = process.env.JWT_SECRET!;
+export const COOKIE_SECRET = process.env.COOKIE_SECRET || "secret";
 
 export const DB_OPTIONS = {
   host: process.env.DATABASE_HOST!,
