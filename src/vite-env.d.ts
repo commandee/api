@@ -20,6 +20,17 @@ declare module "fastify" {
   }
 }
 
+declare module "@fastify/jwt" {
+  interface FastifyJWT {
+    payload: { id: string };
+    user: () => Promise<{
+      id: string;
+      username: string;
+      email: string;
+    }>;
+  }
+}
+
 type Readable<T> = {
   [P in keyof T]: T[P];
 };

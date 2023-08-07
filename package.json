@@ -42,6 +42,7 @@
     "@fastify/accepts": "^4.2.0",
     "@fastify/cookie": "^8.3.0",
     "@fastify/formbody": "^7.4.0",
+    "@fastify/jwt": "^7.2.0",
     "@fastify/multipart": "^7.7.2",
     "@fastify/static": "^6.10.2",
     "@fastify/swagger": "^8.8.0",

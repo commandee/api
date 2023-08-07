@@ -1,4 +1,9 @@
-import Fastify, { FastifyReply, FastifyTypeProvider } from "fastify";
+import Fastify, {
+  FastifyError,
+  FastifyReply,
+  FastifyRequest,
+  FastifyTypeProvider
+} from "fastify";
 import path from "path";
 import { fileURLToPath } from "url";
 import { Static, TSchema } from "@fastify/type-provider-typebox";
@@ -45,6 +50,41 @@ fastify.register(import("@fastify/static"), {
   decorateReply: false
 });
 
+fastify.register(import("@fastify/cookie"), {
+  secret: enviroment.COOKIE_SECRET
+});
+
+fastify.register(import("@fastify/jwt"), {
+  secret: enviroment.JWT_SECRET,
+  cookie: {
+    cookieName: "token",
+    signed: false
+  },
+  sign: {
+    expiresIn: "30s"
+  },
+  formatUser: (user) => () => userControl.get(user.id)
+});
+
+fastify.decorate(
+  "authenticate",
+  async function (request: FastifyRequest, reply: FastifyReply) {
+    try {
+      await request.jwtVerify();
+    } catch (err) {
+      const error = err as FastifyError;
+
+      switch (error.code) {
+        case "FST_JWT_AUTHORIZATION_TOKEN_EXPIRED":
+          return reply.code(403).send(error);
+
+        default:
+          return reply.code(401).send(error);
+      }
+    }
+  }
+);
+
 fastify.register(import("@fastify/formbody"));
 fastify.register(import("@fastify/multipart"), { addToBody: true });
 fastify.addContentTypeParser(
@@ -63,6 +103,13 @@ fastify.addContentTypeParser(
 declare module "fastify" {
   interface FastifyReply {
     view: (element: JSX.Element) => FastifyReply;
+  }
+
+  interface FastifyInstance {
+    authenticate: (
+      request: FastifyRequest,
+      reply: FastifyReply
+    ) => Promise<void>;
   }
 }
 
