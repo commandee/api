@@ -1,8 +1,5 @@
-import { JSONSchema7 } from "json-schema";
 import { FastifyInstance } from "../server";
-import db from "../database/db";
-import bcrypt from "bcryptjs";
-import * as UserControl from "../controllers/employee_controller";
+import * as UserControl from "../controllers/employee";
 
 export default async function (fastify: FastifyInstance) {
   fastify.post(
@@ -29,67 +26,9 @@ export default async function (fastify: FastifyInstance) {
     },
     async (request, reply) => {
       const user = request.body;
-
-      const res = await UserControl.create(user);
-
-      if (res.numInsertedOrUpdatedRows !== 1n) {
-        return reply.code(500).send();
-      }
+      await UserControl.create(user);
 
       return reply.code(201).send("User created successfully");
-    }
-  );
-
-  fastify.get(
-    "/:username",
-    {
-      schema: {
-        summary: "Get user",
-        tags: ["user"],
-        params: {
-          type: "object",
-          properties: {
-            username: { type: "string", minLength: 3, maxLength: 255 }
-          },
-          required: ["username"],
-          additionalProperties: false
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              id: { type: "string", minLength: 21, maxLength: 21 },
-              username: { type: "string", minLength: 3, maxLength: 255 },
-              email: { type: "string", format: "email", maxLength: 255 },
-              password: { type: "string", minLength: 60, maxLength: 60 }
-            },
-            required: ["id", "username", "email", "password"],
-            additionalProperties: false
-          },
-          404: {
-            type: "string",
-            const: "Not found",
-            description: "A user with the given ID does not exist",
-            contentMediaType: "text/plain"
-          }
-        },
-        produces: ["application/json", "text/plain"]
-      } as const
-    },
-    async (request, reply) => {
-      const { username } = request.params;
-
-      const user = await db
-        .selectFrom("employee")
-        .where("employee.username", "=", username)
-        .select(["id", "username", "email", "password"])
-        .executeTakeFirst();
-
-      if (!user) {
-        return reply.code(404).send("Not found");
-      }
-
-      return reply.send(user);
     }
   );
 
@@ -113,39 +52,50 @@ export default async function (fastify: FastifyInstance) {
         response: {
           200: {
             type: "string",
-            const: "Logged in",
             description: "The user has been logged in successfully"
           },
           401: {
             type: "string",
-            const: "Invalid password",
             description:
               "The given password does not match the given user's password"
           },
           404: {
             type: "string",
-            const: "User not found",
             description: "The given email does not match an existing user"
-          } satisfies JSONSchema7
+          }
         },
         produces: ["text/plain"]
       } as const
     },
     async (request, reply) => {
-      const { email, password } = request.body;
+      const loginInfo = request.body;
+      const id = await UserControl.validateUser(loginInfo);
 
-      const user = await db
-        .selectFrom("employee")
-        .where("email", "=", email)
-        .select("password")
-        .executeTakeFirst();
+      const token = await reply.jwtSign({ id });
 
-      if (!user) return reply.code(404).send("User not found");
+      reply.setCookie("token", token, {
+        path: "/",
+        httpOnly: true,
+        sameSite: true,
+        secure: true
+      });
 
-      if (!(await bcrypt.compare(password, user.password)))
-        return reply.code(401).send("Invalid password");
+      return reply.send("Logged in successfully");
+    }
+  );
 
-      return reply.code(200).send("Logged in");
+  fastify.get(
+    "/whoami",
+    {
+      schema: {
+        summary: "Returns username",
+        tags: ["user"],
+        response: {}
+      } as const,
+      onRequest: [fastify.authenticate]
+    },
+    async (request, reply) => {
+      return reply.send((await request.user()).username);
     }
   );
 
@@ -177,10 +127,51 @@ export default async function (fastify: FastifyInstance) {
       } as const
     },
     async (request, reply) => {
-      const res = await UserControl.drop(request.body);
+      await UserControl.drop(request.body);
+      return reply.send("User deleted successfully");
+    }
+  );
 
-      if (!res) return reply.code(500).send("User deleted successfully");
-      return reply.code(200).send("User deleted successfully");
+  fastify.get(
+    "/:username",
+    {
+      schema: {
+        summary: "Get user",
+        tags: ["user"],
+        params: {
+          type: "object",
+          properties: {
+            username: { type: "string", minLength: 3, maxLength: 255 }
+          },
+          required: ["username"],
+          additionalProperties: false
+        },
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              id: { type: "string", minLength: 21, maxLength: 21 },
+              username: { type: "string", minLength: 3, maxLength: 255 },
+              email: { type: "string", format: "email", maxLength: 255 }
+            },
+            required: ["id", "username", "email"],
+            additionalProperties: false
+          },
+          404: {
+            type: "string",
+            const: "User not found",
+            description: "A user with the given ID does not exist",
+            contentMediaType: "text/plain"
+          }
+        },
+        produces: ["application/json", "text/plain"]
+      } as const
+    },
+    async (request, reply) => {
+      const { username } = request.params;
+      const user = await UserControl.getByUsername(username);
+
+      return reply.send(user);
     }
   );
 }
