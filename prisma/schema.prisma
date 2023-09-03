@@ -30,13 +30,13 @@ model Employee {
   email    String        @unique @db.VarChar(255)
   password String        @db.VarChar(255)
   publicId String        @unique @map("public_id") @db.VarChar(16)
-  worksAt  Employement[]
+  worksAt  Employment[]
   owns     Ownership[]
 
   @@map("employee")
 }
 
-model Employement {
+model Employment {
   employeeId   String     @map("employee_id") @db.VarChar(36)
   restaurantId String     @map("restaurant_id") @db.VarChar(36)
   employee     Employee   @relation(fields: [employeeId], references: [id])
@@ -45,7 +45,7 @@ model Employement {
   @@id([employeeId, restaurantId])
   @@index([restaurantId])
   @@index([employeeId])
-  @@map("employement")
+  @@map("employment")
 }
 
 model Item {
@@ -83,14 +83,14 @@ model Order {
 }
 
 model Ownership {
-  ownerId      String     @map("owner_id") @db.VarChar(36)
+  employeeID   String     @map("employee_id") @db.VarChar(36)
   restaurantId String     @map("restaurant_id") @db.VarChar(36)
-  owner        Employee   @relation(fields: [ownerId], references: [id])
+  owner        Employee   @relation(fields: [employeeID], references: [id])
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
 
-  @@id([ownerId, restaurantId])
+  @@id([employeeID, restaurantId])
   @@index([restaurantId])
-  @@index([ownerId])
+  @@index([employeeID])
   @@map("ownership")
 }
 
@@ -100,7 +100,7 @@ model Restaurant {
   address      String        @db.VarChar(255)
   publicId     String        @unique @map("public_id") @db.VarChar(16)
   owners       Ownership[]
-  employements Employement[]
+  employements Employment[]
   commandas    Commanda[]
   items        Item[]
   orders       Order[]
