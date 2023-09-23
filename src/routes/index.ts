@@ -1,4 +1,4 @@
-import { FastifyInstance } from "../server";
+import type { FastifyInstance } from "../server";
 import db from "../database/db";
 import { PORT } from "../enviroment";
 

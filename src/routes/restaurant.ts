@@ -1,4 +1,4 @@
-import { FastifyInstance } from "../server";
+import type { FastifyInstance } from "../server";
 import * as restaurantControl from "../controllers/restaurant";
 
 export default async function (fastify: FastifyInstance) {
@@ -20,7 +20,8 @@ export default async function (fastify: FastifyInstance) {
           },
           required: ["id"],
           additionalProperties: false
-        }
+        },
+        tags: ["restaurant"]
       } as const
     },
     async (request, reply) => {
@@ -48,7 +49,8 @@ export default async function (fastify: FastifyInstance) {
           },
           required: ["id"],
           additionalProperties: false
-        }
+        },
+        tags: ["restaurant"]
       } as const
     },
     async (request, reply) => {

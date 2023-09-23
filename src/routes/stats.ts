@@ -1,4 +1,4 @@
-import { FastifyInstance } from "../server";
+import type { FastifyInstance } from "../server";
 import * as statsControl from "../controllers/statistics";
 
 export default async function (fastify: FastifyInstance) {

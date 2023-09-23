@@ -1,4 +1,4 @@
-import { FastifyInstance } from "../server";
+import type { FastifyInstance } from "../server";
 import * as UserControl from "../controllers/employee";
 
 export default async function (fastify: FastifyInstance) {

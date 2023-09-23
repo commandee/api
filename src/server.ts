@@ -1,20 +1,21 @@
-import Fastify, {
+import Fastify from "fastify";
+import type {
   FastifyError,
   FastifyReply,
   FastifyRequest,
   FastifyTypeProvider
 } from "fastify";
-import path from "path";
+import * as path from "path";
 import { fileURLToPath } from "url";
-import { Static, TSchema } from "@fastify/type-provider-typebox";
+import type { Static, TSchema } from "@fastify/type-provider-typebox";
 import type {
   FromSchema,
   FromSchemaOptions,
   FromSchemaDefaultOptions,
   JSONSchema7
 } from "json-schema-to-ts";
-import YAML from "js-yaml";
-import fs from "fs/promises";
+import * as YAML from "js-yaml";
+import * as fs from "fs/promises";
 import router from "./router";
 import * as userControl from "./controllers/employee";
 import * as enviroment from "./enviroment";

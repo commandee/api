@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import { PlanetScaleDialectConfig } from "kysely-planetscale";
+import type { PlanetScaleDialectConfig } from "kysely-planetscale";
 
 dotenv.config();
 

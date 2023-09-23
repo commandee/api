@@ -1,5 +1,5 @@
 import { Kysely } from "kysely";
-import { DB } from "./generated/schema/schema";
+import type { DB } from "./generated/schema/schema";
 import { PlanetScaleDialect } from "kysely-planetscale";
 import { DB_OPTIONS } from "../enviroment";
 

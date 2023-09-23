@@ -1,4 +1,4 @@
-import { FastifyInstance } from "./server";
+import type { FastifyInstance } from "./server";
 
 export default async function (fastify: FastifyInstance) {
   const routes = import.meta.glob("./routes/**/*.{ts,js,tsx,jsx}", {
@@ -12,7 +12,7 @@ export default async function (fastify: FastifyInstance) {
         prefix?: string;
       };
       const prefix =
-        routeModule.prefix ?? path.match(/\.\/routes(.*?)(\/index)?\.ts/)![1];
+        routeModule.prefix ?? path.match(/^\.\/routes(.*?)(?:\/index)?\.(?:ts|js|jsx|tsx)$/)![1];
 
       await fastify.register(routeModule.default, { prefix });
     })

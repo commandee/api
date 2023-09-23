@@ -1,4 +1,4 @@
-import { FastifyInstance } from "../server";
+import type { FastifyInstance } from "../server";
 
 import * as commandaControl from "../controllers/commanda";
 
