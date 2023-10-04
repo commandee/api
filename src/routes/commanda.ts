@@ -23,15 +23,9 @@ export default async function (fastify: FastifyInstance) {
               maximum: 255,
               description: "Number of the table for the commanda (optional)",
               nullable: true
-            },
-            restaurant: {
-              type: "string",
-              minLength: 16,
-              maxLength: 16,
-              description: "Public ID of the restaurant"
             }
           },
-          required: ["costumer", "restaurant"],
+          required: ["costumer"],
           additionalProperties: false
         },
         response: {
@@ -43,38 +37,56 @@ export default async function (fastify: FastifyInstance) {
       } as const
     },
     async (request, reply) => {
+      fastify.authenticateWithRestaurant(request, reply);
+
       const commanda = request.body;
-      await commandaControl.create(commanda);
+      const restaurantId = request.user.restaurantId!;
+      
+      await commandaControl.create(commanda, restaurantId);
 
       reply.status(201).send("Commanda created successfully");
     }
   );
 
   fastify.get(
-    "/restaurant/:restaurant",
+    "/",
     {
       schema: {
-        summary: "Get all commandas from a restaurant",
-        params: {
-          type: "object",
-          properties: {
-            restaurant: {
-              type: "string",
-              minLength: 16,
-              maxLength: 16,
-              description: "Public ID of the restaurant"
-            }
-          },
-          required: ["restaurant"],
-          additionalProperties: false
-        }
+        summary: "Get all commandas from the restaurant"
       } as const
     },
     async (request, reply) => {
-      const { restaurant } = request.params;
+      fastify.authenticateWithRestaurant(request, reply);
+
+      const restaurant = request.user.restaurantId!;
       const commandas = await commandaControl.getAllFrom(restaurant);
 
-      reply.status(200).send(commandas);
+      return reply.status(200).send(commandas);
     }
   );
+
+  fastify.get("/:id", {
+    schema: {
+      summary: "Get commanda by ID",
+      params: {
+        type: "object",
+        properties: {
+          id: {
+            type: "string",
+            minLength: 16,
+            maxLength: 16,
+            description: "Public ID of the commanda"
+          }
+        },
+        required: ["id"],
+        additionalProperties: false
+      }
+    } as const
+  }, async (request, reply) => {
+    fastify.authenticateWithRestaurant(request, reply);
+
+    const commanda = await commandaControl.get(request.params.id);
+
+    return reply.send(commanda);
+  });
 }

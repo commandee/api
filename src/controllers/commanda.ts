@@ -1,11 +1,26 @@
+import APIError from "../api_error";
 import { genID } from "../crypt";
 import db from "../database/db";
+
+export async function get(id: string) {
+  const commanda = await db
+    .selectFrom("commanda")
+    .innerJoin("restaurant", "restaurant.id", "commanda.restaurant_id")
+    .select([
+      "commanda.costumer",
+      "commanda.table",
+      "commanda.public_id as id"
+    ])
+    .where("commanda.public_id", "=", id)
+    .executeTakeFirstOrThrow(APIError.noResult("Commanda not found"));
+
+  return commanda;
+}
 
 export async function create(commanda: {
   costumer: string;
   table?: number | null;
-  restaurant: string;
-}) {
+}, restaurant: string) {
   const public_id = await genID();
 
   const result = await db
@@ -17,7 +32,7 @@ export async function create(commanda: {
       public_id,
       restaurant_id: selectFrom("restaurant")
         .select("id as restaurant_id")
-        .where("public_id", "=", commanda.restaurant)
+        .where("public_id", "=", restaurant)
     }))
     .executeTakeFirstOrThrow();
 
@@ -35,7 +50,7 @@ export async function getAllFrom(restaurant: string) {
       "restaurant.public_id as restaurant"
     ])
     .where("restaurant.public_id", "=", restaurant)
-    .executeTakeFirstOrThrow();
+    .execute();
 
   return result;
 }

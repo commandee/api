@@ -35,8 +35,6 @@ export default async function (fastify: FastifyInstance) {
     "/login",
     {
       schema: {
-        summary: "Login into a restaurant",
-        description: "Sets your session to a restaurant",
         body: {
           type: "object",
           properties: {
@@ -50,13 +48,23 @@ export default async function (fastify: FastifyInstance) {
           required: ["id"],
           additionalProperties: false
         },
-        tags: ["restaurant"]
       } as const
     },
     async (request, reply) => {
+      const { userId } = request.user;
       const { id: restaurantId } = request.body;
 
-      return reply.send(restaurantId);
+      const payload = await restaurantControl.login({ userId, restaurantId });
+      const token = await reply.jwtSign(payload);
+
+      reply.setCookie("token", token, {
+        path: "/",
+        httpOnly: true,
+        sameSite: true,
+        secure: true
+      });
+
+      reply.send(token);
     }
   );
 }

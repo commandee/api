@@ -18,7 +18,9 @@ import * as YAML from "js-yaml";
 import * as fs from "fs/promises";
 import router from "./router";
 import * as userControl from "./controllers/employee";
+import * as restaurantControl from "./controllers/restaurant";
 import * as enviroment from "./enviroment";
+import APIError from "./api_error";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 interface TypeProvider<
@@ -65,9 +67,8 @@ fastify.register(import("@fastify/jwt"), {
     signed: false
   },
   sign: {
-    expiresIn: "30s"
-  },
-  formatUser: (user) => () => userControl.get(user.id)
+    expiresIn: "120s"
+  }
 });
 
 fastify.decorate(
@@ -86,6 +87,45 @@ fastify.decorate(
           return reply.code(401).send(error);
       }
     }
+  }
+);
+
+fastify.decorate(
+  "authenticateWithRestaurant",
+  async function (request: FastifyRequest, reply: FastifyReply) {
+    fastify.authenticate(request, reply);
+
+    if (!request.user.restaurantId) {
+      throw new APIError("User is not logged in to a restaurant", 403);
+    }
+  }
+);
+
+fastify.decorateRequest("payload", async function (this: FastifyRequest) {
+  const { userId, restaurantId } = (await this.jwtDecode()) as {
+    userId: string;
+    restaurantId?: string;
+  };
+
+  return { userId, restaurantId };
+});
+
+fastify.decorateRequest("fetchUser", async function (this: FastifyRequest) {
+  const { userId } = this.user;
+
+  return await userControl.get(userId);
+});
+
+fastify.decorateRequest(
+  "fetchRestaurant",
+  async function (this: FastifyRequest) {
+    const { restaurantId } = this.user;
+
+    if (!restaurantId) {
+      throw new APIError("User is not logged in to a restaurant", 403);
+    }
+
+    return await restaurantControl.get(restaurantId);
   }
 );
 
@@ -109,8 +149,27 @@ declare module "fastify" {
     view: (element: JSX.Element) => FastifyReply;
   }
 
+  interface FastifyRequest {
+    payload: () => Promise<{ userId: string; restaurantId?: string }>;
+    fetchRestaurant: () => Promise<{
+      id: string;
+      name: string;
+      address: string;
+    }>;
+    fetchUser: () => Promise<{
+      id: string;
+      username: string;
+      email: string;
+    }>;
+  }
+
   interface FastifyInstance {
     authenticate: (
+      request: FastifyRequest,
+      reply: FastifyReply
+    ) => Promise<void>;
+
+    authenticateWithRestaurant: (
       request: FastifyRequest,
       reply: FastifyReply
     ) => Promise<void>;

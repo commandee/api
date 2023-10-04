@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "../server";
-import * as UserControl from "../controllers/employee";
+import * as userControl from "../controllers/employee";
 
 export default async function (fastify: FastifyInstance) {
   fastify.post(
@@ -26,7 +26,7 @@ export default async function (fastify: FastifyInstance) {
     },
     async (request, reply) => {
       const user = request.body;
-      await UserControl.create(user);
+      await userControl.create(user);
 
       return reply.code(201).send("User created successfully");
     }
@@ -69,9 +69,9 @@ export default async function (fastify: FastifyInstance) {
     },
     async (request, reply) => {
       const loginInfo = request.body;
-      const id = await UserControl.validateUser(loginInfo);
+      const userId = await userControl.login(loginInfo);
 
-      const token = await reply.jwtSign({ id });
+      const token = await reply.jwtSign({ userId });
 
       reply.setCookie("token", token, {
         path: "/",
@@ -80,7 +80,7 @@ export default async function (fastify: FastifyInstance) {
         secure: true
       });
 
-      return reply.send("Logged in successfully");
+      return reply.send(token);
     }
   );
 
@@ -95,7 +95,7 @@ export default async function (fastify: FastifyInstance) {
       onRequest: [fastify.authenticate]
     },
     async (request, reply) => {
-      return reply.send((await request.user()).username);
+      return reply.send(await request.payload());
     }
   );
 
@@ -127,7 +127,7 @@ export default async function (fastify: FastifyInstance) {
       } as const
     },
     async (request, reply) => {
-      await UserControl.drop(request.body);
+      await userControl.drop(request.body);
       return reply.send("User deleted successfully");
     }
   );
@@ -169,7 +169,7 @@ export default async function (fastify: FastifyInstance) {
     },
     async (request, reply) => {
       const { username } = request.params;
-      const user = await UserControl.getByUsername(username);
+      const user = await userControl.getByUsername(username);
 
       return reply.send(user);
     }

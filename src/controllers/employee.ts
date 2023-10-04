@@ -48,7 +48,7 @@ export async function create(employee: {
   }
 }
 
-export async function validateUser({
+export async function login({
   email,
   password
 }: {
@@ -75,7 +75,7 @@ export async function drop({
   email: string;
   password: string;
 }) {
-  const id = await validateUser({ email, password });
+  const id = await login({ email, password });
 
   const result = await db
     .deleteFrom("employee")
