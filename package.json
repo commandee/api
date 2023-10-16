@@ -30,7 +30,7 @@
     "eslint-config-prettier": "^8.8.0",
     "kysely-codegen": "^0.10.1",
     "prettier": "^3.0.0",
-    "prisma": "^5.1.1",
+    "prisma": "^5.4.2",
     "prisma-kysely": "^1.5.0",
     "terser": "^5.19.2",
     "typescript": "^5.0.2",
@@ -41,6 +41,7 @@
   "dependencies": {
     "@fastify/accepts": "^4.2.0",
     "@fastify/cookie": "^8.3.0",
+    "@fastify/cors": "^8.4.0",
     "@fastify/formbody": "^7.4.0",
     "@fastify/jwt": "^7.2.0",
     "@fastify/multipart": "^7.7.2",

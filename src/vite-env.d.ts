@@ -3,6 +3,7 @@
 
 import type { JSONSchema7 } from "json-schema-to-ts";
 import type { TSchema } from "@sinclair/typebox";
+import type { Role } from "./database/generated/schema/enums";
 
 declare global {
   const elements: typeof import("typed-html");
@@ -23,8 +24,11 @@ declare module "fastify" {
 declare module "@fastify/jwt" {
   interface FastifyJWT {
     payload: { 
-      userId: string;
-      restaurantId?: string;
+      id: string;
+      restaurant?: {
+        id: string;
+        role: Role;
+      }
     };
   }
 }

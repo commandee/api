@@ -17,7 +17,7 @@ model Commanda {
   table        Int?
   restaurantId String     @map("restaurant_id") @db.VarChar(36)
   publicId     String     @unique @map("public_id") @db.VarChar(16)
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   orders       Order[]
 
   @@index([restaurantId])
@@ -31,30 +31,41 @@ model Employee {
   password String        @db.VarChar(255)
   publicId String        @unique @map("public_id") @db.VarChar(16)
   worksAt  Employment[]
-  owns     Ownership[]
 
   @@map("employee")
+  @@index([email])
+  @@index([username])
 }
 
 model Employment {
   employeeId   String     @map("employee_id") @db.VarChar(36)
   restaurantId String     @map("restaurant_id") @db.VarChar(36)
-  employee     Employee   @relation(fields: [employeeId], references: [id])
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  role         Role       @default(employee)
+  employee     Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
   @@id([employeeId, restaurantId])
   @@index([restaurantId])
   @@index([employeeId])
+  @@index([role])
   @@map("employment")
+}
+
+enum Role {
+  admin
+  employee
+
+  @@map("role")
 }
 
 model Item {
   id           String     @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
   name         String     @db.VarChar(255)
   price        Int
+  description  String?    @db.VarChar(255)
   restaurantId String     @map("restaurant_id") @db.VarChar(36)
   publicId     String     @unique @map("public_id") @db.VarChar(16)
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   orders       Order[]
 
   @@index([name])
@@ -72,9 +83,9 @@ model Order {
   status       Status     @default(pending)
   notes        String?    @db.VarChar(512)
   publicId     String     @unique @map("public_id") @db.VarChar(16)
-  commanda     Commanda   @relation(fields: [commandaId], references: [id])
-  item         Item       @relation(fields: [itemId], references: [id])
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  commanda     Commanda   @relation(fields: [commandaId], references: [id], onDelete: Cascade)
+  item         Item       @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
   @@index([itemId])
   @@index([commandaId])
@@ -82,24 +93,11 @@ model Order {
   @@map("order")
 }
 
-model Ownership {
-  employeeID   String     @map("employee_id") @db.VarChar(36)
-  restaurantId String     @map("restaurant_id") @db.VarChar(36)
-  owner        Employee   @relation(fields: [employeeID], references: [id])
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
-
-  @@id([employeeID, restaurantId])
-  @@index([restaurantId])
-  @@index([employeeID])
-  @@map("ownership")
-}
-
 model Restaurant {
   id           String        @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
   name         String        @unique @db.VarChar(255)
   address      String        @db.VarChar(255)
   publicId     String        @unique @map("public_id") @db.VarChar(16)
-  owners       Ownership[]
   employements Employment[]
   commandas    Commanda[]
   items        Item[]

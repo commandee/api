@@ -42,6 +42,11 @@ const fastify = Fastify({
   }
 }).withTypeProvider<TypeProvider>();
 
+fastify.register(import("@fastify/cors"), {
+  origin: ["http://localhost:5173"],
+  credentials: true
+});
+
 fastify.register(import("@fastify/accepts"));
 
 fastify.register(import("@fastify/static"), {
@@ -67,7 +72,7 @@ fastify.register(import("@fastify/jwt"), {
     signed: false
   },
   sign: {
-    expiresIn: "120s"
+    expiresIn: "2h"
   }
 });
 
@@ -95,7 +100,7 @@ fastify.decorate(
   async function (request: FastifyRequest, reply: FastifyReply) {
     fastify.authenticate(request, reply);
 
-    if (!request.user.restaurantId) {
+    if (!request.user.restaurant?.id) {
       throw new APIError("User is not logged in to a restaurant", 403);
     }
   }
@@ -111,21 +116,21 @@ fastify.decorateRequest("payload", async function (this: FastifyRequest) {
 });
 
 fastify.decorateRequest("fetchUser", async function (this: FastifyRequest) {
-  const { userId } = this.user;
+  const { id } = this.user;
 
-  return await userControl.get(userId);
+  return await userControl.get(id);
 });
 
 fastify.decorateRequest(
   "fetchRestaurant",
   async function (this: FastifyRequest) {
-    const { restaurantId } = this.user;
+    const { restaurant } = this.user;
 
-    if (!restaurantId) {
+    if (!restaurant) {
       throw new APIError("User is not logged in to a restaurant", 403);
     }
 
-    return await restaurantControl.get(restaurantId);
+    return await restaurantControl.get(restaurant.id);
   }
 );
 
