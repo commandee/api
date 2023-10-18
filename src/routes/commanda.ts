@@ -41,7 +41,7 @@ export default async function (fastify: FastifyInstance) {
 
       const commanda = request.body;
       const restaurantId = request.user.restaurant!.id;
-      
+
       await commandaControl.create(commanda, restaurantId);
 
       reply.status(201).send("Commanda created successfully");
@@ -52,7 +52,38 @@ export default async function (fastify: FastifyInstance) {
     "/",
     {
       schema: {
-        summary: "Get all commandas from the restaurant"
+        summary: "Get all commandas from the restaurant",
+        response: {
+          200: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                costumer: {
+                  type: "string",
+                  minLength: 2,
+                  maxLength: 255
+                },
+                table: {
+                  type: "integer",
+                  minimum: 1,
+                  maximum: 255,
+                  description:
+                    "Number of the table for the commanda (optional)",
+                  nullable: true
+                },
+                id: {
+                  type: "string",
+                  minLength: 16,
+                  maxLength: 16,
+                  description: "Public ID of the commanda"
+                }
+              },
+              required: ["costumer", "id"],
+              additionalProperties: false
+            }
+          }
+        }
       } as const
     },
     async (request, reply) => {
@@ -65,28 +96,32 @@ export default async function (fastify: FastifyInstance) {
     }
   );
 
-  fastify.get("/:id", {
-    schema: {
-      summary: "Get commanda by ID",
-      params: {
-        type: "object",
-        properties: {
-          id: {
-            type: "string",
-            minLength: 16,
-            maxLength: 16,
-            description: "Public ID of the commanda"
-          }
-        },
-        required: ["id"],
-        additionalProperties: false
-      }
-    } as const
-  }, async (request, reply) => {
-    fastify.authenticateWithRestaurant(request, reply);
+  fastify.get(
+    "/:id",
+    {
+      schema: {
+        summary: "Get commanda by ID",
+        params: {
+          type: "object",
+          properties: {
+            id: {
+              type: "string",
+              minLength: 16,
+              maxLength: 16,
+              description: "Public ID of the commanda"
+            }
+          },
+          required: ["id"],
+          additionalProperties: false
+        }
+      } as const
+    },
+    async (request, reply) => {
+      fastify.authenticateWithRestaurant(request, reply);
 
-    const commanda = await commandaControl.get(request.params.id);
+      const commanda = await commandaControl.get(request.params.id);
 
-    return reply.send(commanda);
-  });
+      return reply.send(commanda);
+    }
+  );
 }
