@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "../server";
 import * as restaurantControl from "../controllers/restaurant";
 import APIError from "../api_error";
+import * as employeeControl from "../controllers/employee";
 
 export default async function (fastify: FastifyInstance) {
   fastify.get(
@@ -94,9 +95,27 @@ export default async function (fastify: FastifyInstance) {
         secure: true
       });
 
-      reply.send(login);
+      return reply.send(login);
     }
   );
+
+  fastify.post("/logout", {
+
+  }, async (request, reply) => {
+    await fastify.authenticateWithRestaurant(request, reply);
+
+    const token = await reply.jwtSign({ id: request.user.id });
+
+    reply.setCookie("token", token, {
+      path: "/",
+      httpOnly: true,
+      sameSite: true,
+      secure: true
+    });
+
+    const login = await employeeControl.info({ userId: request.user.id });
+    return reply.send(login);
+  });
 
   fastify.get(
     "/menu",
