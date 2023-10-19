@@ -15,12 +15,9 @@ model Commanda {
   id           String     @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
   costumer     String     @db.VarChar(255)
   table        Int?
-  restaurantId String     @map("restaurant_id") @db.VarChar(36)
   publicId     String     @unique @map("public_id") @db.VarChar(16)
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   orders       Order[]
 
-  @@index([restaurantId])
   @@map("commanda")
 }
 
@@ -77,7 +74,6 @@ model Order {
   id           String     @id @default(dbgenerated("(uuid())")) @db.VarChar(36)
   commandaId   String     @map("commanda_id") @db.VarChar(36)
   itemId       String     @map("item_id") @db.VarChar(36)
-  restaurantId String     @map("restaurant_id") @db.VarChar(36)
   quantity     Int        @default(1)
   priority     Priority   @default(low)
   status       Status     @default(pending)
@@ -85,11 +81,9 @@ model Order {
   publicId     String     @unique @map("public_id") @db.VarChar(16)
   commanda     Commanda   @relation(fields: [commandaId], references: [id], onDelete: Cascade)
   item         Item       @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
   @@index([itemId])
   @@index([commandaId])
-  @@index([restaurantId])
   @@map("order")
 }
 
@@ -99,9 +93,7 @@ model Restaurant {
   address      String        @db.VarChar(255)
   publicId     String        @unique @map("public_id") @db.VarChar(16)
   employements Employment[]
-  commandas    Commanda[]
   items        Item[]
-  orders       Order[]
 
   @@map("restaurant")
 }
