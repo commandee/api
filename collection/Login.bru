@@ -1,0 +1,16 @@
+meta {
+  name: Login
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{url}}/user/login
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  email: ame.pistache@gmail.com
+  password: senhasenha
+}
