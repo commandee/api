@@ -14,37 +14,6 @@ export async function get(id: string) {
   return restaurant;
 }
 
-export async function getMenu(id: string) {
-  const menu = await db
-    .selectFrom("item")
-    .innerJoin("restaurant", "restaurant.id", "item.restaurant_id")
-    .select([
-      "item.name",
-      "item.price",
-      "item.public_id as id",
-      "item.description"
-    ])
-    .where("restaurant.public_id", "=", id)
-    .execute();
-
-  return menu.map((item) => ({
-    ...item,
-    description: item.description ?? undefined
-  }));
-}
-
-export async function countMenu(id: string) {
-  const { count } = await db
-    .selectFrom("item")
-    .innerJoin("restaurant", "restaurant.id", "item.restaurant_id")
-    .where("restaurant.public_id", "=", id)
-    .groupBy("restaurant.public_id")
-    .select((eb) => eb.fn.countAll().as("count"))    
-    .executeTakeFirstOrThrow();
-
-  return count;
-}
-
 export async function create(restaurant: { name: string; address: string }) {
   const public_id = await genID();
 
@@ -113,33 +82,4 @@ export async function isEmployee({
     );
 
   return role;
-}
-
-export async function getEmployees(restaurantId: string) {
-  const result = await db
-    .selectFrom("employment")
-    .innerJoin("employee", "employee.id", "employment.employee_id")
-    .innerJoin("restaurant", "restaurant.id", "employment.restaurant_id")
-    .where("restaurant.public_id", "=", restaurantId)
-    .select([
-      "employee.public_id as id",
-      "employee.username",
-      "employee.email",
-      "employment.role"
-    ])
-    .execute();
-
-  return result;
-}
-
-export async function countEmployees(restaurantId: string) {
-  const { count } = await db
-    .selectFrom("employment")
-    .innerJoin("restaurant", "restaurant.id", "employment.restaurant_id")
-    .where("restaurant.public_id", "=", restaurantId)
-    .groupBy("restaurant.public_id")
-    .select((eb) => eb.fn.countAll().as("count"))    
-    .executeTakeFirstOrThrow();
-
-  return count;
 }

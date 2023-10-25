@@ -20,3 +20,34 @@ export async function get(id: string) {
     description: item.description ?? undefined
   };
 }
+
+export async function getMenu(restaurantId: string) {
+  const menu = await db
+    .selectFrom("item")
+    .innerJoin("restaurant", "restaurant.id", "item.restaurant_id")
+    .select([
+      "item.name",
+      "item.price",
+      "item.public_id as id",
+      "item.description"
+    ])
+    .where("restaurant.public_id", "=", restaurantId)
+    .execute();
+
+  return menu.map((item) => ({
+    ...item,
+    description: item.description ?? undefined
+  }));
+}
+
+export async function countMenu(restaurantId: string) {
+  const { count } = await db
+    .selectFrom("item")
+    .innerJoin("restaurant", "restaurant.id", "item.restaurant_id")
+    .where("restaurant.public_id", "=", restaurantId)
+    .groupBy("restaurant.public_id")
+    .select((eb) => eb.fn.countAll().as("count"))    
+    .executeTakeFirstOrThrow();
+
+  return count;
+}

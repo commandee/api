@@ -158,3 +158,32 @@ export async function worksAt(userId: string) {
 
   return result;
 }
+
+export async function getEmployees(restaurantId: string) {
+  const result = await db
+    .selectFrom("employment")
+    .innerJoin("employee", "employee.id", "employment.employee_id")
+    .innerJoin("restaurant", "restaurant.id", "employment.restaurant_id")
+    .where("restaurant.public_id", "=", restaurantId)
+    .select([
+      "employee.public_id as id",
+      "employee.username",
+      "employee.email",
+      "employment.role"
+    ])
+    .execute();
+
+  return result;
+}
+
+export async function countEmployees(restaurantId: string) {
+  const { count } = await db
+    .selectFrom("employment")
+    .innerJoin("restaurant", "restaurant.id", "employment.restaurant_id")
+    .where("restaurant.public_id", "=", restaurantId)
+    .groupBy("restaurant.public_id")
+    .select((eb) => eb.fn.countAll().as("count"))    
+    .executeTakeFirstOrThrow();
+
+  return count;
+}

@@ -4,12 +4,15 @@ import db from "../database/db";
 
 export async function get(id: string) {
   const commanda = await db
-    .selectFrom("commanda")
-    .innerJoin("restaurant", "restaurant.id", "commanda.restaurant_id")
+    .selectFrom("order")
+    .innerJoin("commanda", "commanda.id", "order.commanda_id")
+    .innerJoin("item", "item.id", "order.item_id")
+    .innerJoin("restaurant", "restaurant.id", "item.restaurant_id")
     .select([
       "commanda.costumer",
       "commanda.table",
-      "commanda.public_id as id"
+      "commanda.public_id as id",
+      "restaurant.public_id as restaurantId"
     ])
     .where("commanda.public_id", "=", id)
     .executeTakeFirstOrThrow(APIError.noResult("Commanda not found"));
@@ -41,8 +44,10 @@ export async function create(commanda: {
 
 export async function getAllFrom(restaurant: string) {
   const result = await db
-    .selectFrom("commanda")
-    .innerJoin("restaurant", "restaurant.id", "commanda.restaurant_id")
+    .selectFrom("order")
+    .innerJoin("commanda", "commanda.id", "order.commanda_id")
+    .innerJoin("item", "item.id", "order.item_id")
+    .innerJoin("restaurant", "restaurant.id", "item.restaurant_id")
     .select([
       "commanda.costumer",
       "commanda.table",

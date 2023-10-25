@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "../server";
 
 import * as commandaControl from "../controllers/commanda";
+import APIError from "../api_error";
 
 export default async function (fastify: FastifyInstance) {
   fastify.post(
@@ -117,9 +118,12 @@ export default async function (fastify: FastifyInstance) {
       } as const
     },
     async (request, reply) => {
-      fastify.authenticateWithRestaurant(request, reply);
+      await fastify.authenticateWithRestaurant(request, reply);
 
       const commanda = await commandaControl.get(request.params.id);
+
+      if (commanda.restaurantId != request.user!.restaurant?.id)
+        throw new APIError("Você não tem acesso a essa commanda.", 403);
 
       return reply.send(commanda);
     }
