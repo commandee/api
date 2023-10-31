@@ -7,16 +7,19 @@
     "skipLibCheck": true,
     "noImplicitAny": true,
     /* Bundler mode */
-    "moduleResolution": "bundler",
+    "moduleResolution": "Node",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
+    "verbatimModuleSyntax": true,
+    "esModuleInterop": true,
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
     "jsx": "react",
     "jsxFactory": "elements.createElement"
   },

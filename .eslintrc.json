@@ -20,6 +20,7 @@
     "array-bracket-newline": ["error", "consistent"],
     "class-methods-use-this": "error",
     "eqeqeq": "warn",
+    "require-await": "error",
     "no-eval": "error",
     "no-invalid-regexp": "error",
     "consistent-return": "error",

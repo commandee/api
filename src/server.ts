@@ -1,16 +1,26 @@
-import Fastify, { FastifyReply, FastifyTypeProvider } from "fastify";
-import path from "path";
+import Fastify from "fastify";
+import type {
+  FastifyError,
+  FastifyReply,
+  FastifyRequest,
+  FastifyTypeProvider
+} from "fastify";
+import * as path from "path";
 import { fileURLToPath } from "url";
-import { Static, TSchema } from "@fastify/type-provider-typebox";
+import type { Static, TSchema } from "@fastify/type-provider-typebox";
 import type {
   FromSchema,
   FromSchemaOptions,
   FromSchemaDefaultOptions,
   JSONSchema7
 } from "json-schema-to-ts";
-import YAML from "js-yaml";
-import { HOST, PORT } from "./enviroment";
-import fs from "fs/promises";
+import * as YAML from "js-yaml";
+import * as fs from "fs/promises";
+import router from "./router";
+import * as userControl from "./controllers/employee";
+import * as restaurantControl from "./controllers/restaurant";
+import * as enviroment from "./enviroment";
+import APIError from "./api_error";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 interface TypeProvider<
@@ -32,6 +42,11 @@ const fastify = Fastify({
   }
 }).withTypeProvider<TypeProvider>();
 
+fastify.register(import("@fastify/cors"), {
+  origin: ["http://localhost:5173"],
+  credentials: true
+});
+
 fastify.register(import("@fastify/accepts"));
 
 fastify.register(import("@fastify/static"), {
@@ -45,6 +60,79 @@ fastify.register(import("@fastify/static"), {
   wildcard: true,
   decorateReply: false
 });
+
+fastify.register(import("@fastify/cookie"), {
+  secret: enviroment.COOKIE_SECRET
+});
+
+fastify.register(import("@fastify/jwt"), {
+  secret: enviroment.JWT_SECRET,
+  cookie: {
+    cookieName: "token",
+    signed: false
+  },
+  sign: {
+    expiresIn: "2h"
+  }
+});
+
+fastify.decorate(
+  "authenticate",
+  async function (request: FastifyRequest, reply: FastifyReply) {
+    try {
+      await request.jwtVerify();
+    } catch (err) {
+      const error = err as FastifyError;
+
+      switch (error.code) {
+        case "FST_JWT_AUTHORIZATION_TOKEN_EXPIRED":
+          return reply.code(403).send(error);
+
+        default:
+          return reply.code(401).send(error);
+      }
+    }
+  }
+);
+
+fastify.decorate(
+  "authenticateWithRestaurant",
+  async function (request: FastifyRequest, reply: FastifyReply) {
+    fastify.authenticate(request, reply);
+
+    if (!request.user.restaurant?.id) {
+      throw new APIError("User is not logged in to a restaurant", 403);
+    }
+  }
+);
+
+fastify.decorateRequest("payload", async function (this: FastifyRequest) {
+  const { userId, restaurantId } = (await this.jwtDecode()) as {
+    userId: string;
+    restaurantId?: string;
+  };
+
+  return { userId, restaurantId };
+});
+
+fastify.decorateRequest("fetchUser", async function (this: FastifyRequest) {
+  const { id } = this.user;
+
+  return await userControl.get(id);
+});
+
+fastify.decorateRequest(
+  "fetchRestaurant",
+  async function (this: FastifyRequest) {
+    const { restaurant } = this.user;
+
+    if (!restaurant) {
+      throw new APIError("User is not logged in to a restaurant", 403);
+    }
+
+    return await restaurantControl.get(restaurant.id);
+  }
+);
 
 fastify.register(import("@fastify/formbody"));
 fastify.register(import("@fastify/multipart"), { addToBody: true });
@@ -64,6 +152,32 @@ fastify.addContentTypeParser(
 declare module "fastify" {
   interface FastifyReply {
     view: (element: JSX.Element) => FastifyReply;
+  }
+
+  interface FastifyRequest {
+    payload: () => Promise<{ userId: string; restaurantId?: string }>;
+    fetchRestaurant: () => Promise<{
+      id: string;
+      name: string;
+      address: string;
+    }>;
+    fetchUser: () => Promise<{
+      id: string;
+      username: string;
+      email: string;
+    }>;
+  }
+
+  interface FastifyInstance {
+    authenticate: (
+      request: FastifyRequest,
+      reply: FastifyReply
+    ) => Promise<void>;
+
+    authenticateWithRestaurant: (
+      request: FastifyRequest,
+      reply: FastifyReply
+    ) => Promise<void>;
   }
 }
 
@@ -90,7 +204,24 @@ fastify.register(import("@fastify/swagger"), {
       }
     ]
   },
-  prefix: "/documentation"
+  prefix: "/documentation",
+  transform: ({ schema, url }: { schema: any; url: string }) => {
+    if (schema) {
+      schema.consumes ??= [
+        "application/json",
+        "multipart/form-data",
+        "text/yaml",
+        "text/yml",
+        "application/yaml",
+        "application/yml",
+        "application/x-www-form-urlencoded"
+      ];
+
+      schema.produces ??= ["application/json"];
+    }
+
+    return { schema, url };
+  }
 });
 
 if (import.meta.env.DEV) {
@@ -145,6 +276,7 @@ fastify.register(async (fastify: FastifyInstance) => {
     {
       schema: {
         summary: "OpenAPI Docs JSON",
+        hide: true,
         description: "OpenAPI documentation for the API in JSON format",
         consumes: ["application/json"],
         produces: ["application/json"],
@@ -165,6 +297,7 @@ fastify.register(async (fastify: FastifyInstance) => {
     {
       schema: {
         summary: "OpenAPI Docs YAML",
+        hide: true,
         description: "OpenAPI documentation for the API in YAML format",
         consumes: ["application/yaml", "text/yaml", "text/yml"],
         produces: ["text/yaml"],
@@ -191,7 +324,7 @@ fastify.register(async (fastify: FastifyInstance) => {
   }
 });
 
-fastify.register(import("./router"));
+fastify.register(router);
 
 await fastify.ready();
 
@@ -211,6 +344,8 @@ if (import.meta.env.PROD) {
       encoding: "utf8"
     }
   );
+
+  const { PORT, HOST } = enviroment;
 
   fastify.listen({ port: PORT, host: HOST }, (err, address) => {
     if (err) {
