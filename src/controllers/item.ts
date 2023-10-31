@@ -46,7 +46,7 @@ export async function countMenu(restaurantId: string) {
     .innerJoin("restaurant", "restaurant.id", "item.restaurant_id")
     .where("restaurant.public_id", "=", restaurantId)
     .groupBy("restaurant.public_id")
-    .select((eb) => eb.fn.countAll().as("count"))    
+    .select((eb) => eb.fn.countAll().as("count"))
     .executeTakeFirstOrThrow();
 
   return count;

@@ -71,26 +71,29 @@ export async function login({
     .executeTakeFirstOrThrow(APIError.noResult("Employee not found"));
 
   const [role, restaurant] = await Promise.all([
-    restaurantId ? RestaurantControl.isEmployee({ userId: user.id, restaurantId }) : undefined,
+    restaurantId
+      ? RestaurantControl.isEmployee({ userId: user.id, restaurantId })
+      : undefined,
     restaurantId ? RestaurantControl.get(restaurantId) : undefined,
     bcrypt.compare(password, user.hashedPassword).then((valid) => {
       if (!valid) throw new APIError("Invalid password", 401);
       return valid;
     })
-  ])
+  ]);
 
   return {
     id: user.id,
     email: user.email,
     username: user.username,
-    restaurant: restaurant && role
-      ? {
-          id: restaurant.id,
-          name: restaurant.name,
-          address: restaurant.address,
-          role
-        }
-      : undefined
+    restaurant:
+      restaurant && role
+        ? {
+            id: restaurant.id,
+            name: restaurant.name,
+            address: restaurant.address,
+            role
+          }
+        : undefined
   };
 }
 
@@ -136,14 +139,15 @@ export async function info({
     id: employee.id,
     username: employee.username,
     email: employee.email,
-    restaurant: restaurant && role
-      ? {
-          id: restaurant.id,
-          name: restaurant.name,
-          address: restaurant.address,
-          role
-        }
-      : undefined
+    restaurant:
+      restaurant && role
+        ? {
+            id: restaurant.id,
+            name: restaurant.name,
+            address: restaurant.address,
+            role
+          }
+        : undefined
   };
 }
 
@@ -153,7 +157,11 @@ export async function worksAt(userId: string) {
     .innerJoin("employee", "employee.id", "employment.employee_id")
     .innerJoin("restaurant", "restaurant.id", "employment.restaurant_id")
     .where("employee.public_id", "=", userId)
-    .select(["restaurant.public_id as id", "restaurant.name", "restaurant.address"])
+    .select([
+      "restaurant.public_id as id",
+      "restaurant.name",
+      "restaurant.address"
+    ])
     .execute();
 
   return result;
@@ -182,7 +190,7 @@ export async function countEmployees(restaurantId: string) {
     .innerJoin("restaurant", "restaurant.id", "employment.restaurant_id")
     .where("restaurant.public_id", "=", restaurantId)
     .groupBy("restaurant.public_id")
-    .select((eb) => eb.fn.countAll().as("count"))    
+    .select((eb) => eb.fn.countAll().as("count"))
     .executeTakeFirstOrThrow();
 
   return count;

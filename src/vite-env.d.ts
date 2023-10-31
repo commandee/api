@@ -23,12 +23,12 @@ declare module "fastify" {
 
 declare module "@fastify/jwt" {
   interface FastifyJWT {
-    payload: { 
+    payload: {
       id: string;
       restaurant?: {
         id: string;
         role: Role;
-      }
+      };
     };
   }
 }

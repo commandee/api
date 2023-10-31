@@ -20,10 +20,13 @@ export async function get(id: string) {
   return commanda;
 }
 
-export async function create(commanda: {
-  costumer: string;
-  table?: number | null;
-}, restaurant: string) {
+export async function create(
+  commanda: {
+    costumer: string;
+    table?: number | null;
+  },
+  restaurant: string
+) {
   const public_id = await genID();
 
   const result = await db

@@ -247,14 +247,20 @@ export default async function (fastify: FastifyInstance) {
 
       const { id } = request.params;
 
-      if (id !== request.user.id && request.user.restaurant?.role !== "admin") 
-        throw new APIError("You cannot request users other than yourself or your employees", 403);
+      if (id !== request.user.id && request.user.restaurant?.role !== "admin")
+        throw new APIError(
+          "You cannot request users other than yourself or your employees",
+          403
+        );
 
       const [user, role] = await Promise.all([
         userControl.get(id),
-        restaurantControl.isEmployee({ userId: id, restaurantId: request.user.restaurant?.id! })
+        restaurantControl.isEmployee({
+          userId: id,
+          restaurantId: request.user.restaurant?.id!
+        })
       ]);
-      
+
       return reply.send({
         ...user,
         role

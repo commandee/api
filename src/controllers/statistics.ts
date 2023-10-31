@@ -9,7 +9,12 @@ export async function mostSold(restaurantId: string) {
     .innerJoin("restaurant", "restaurant.id", "item.restaurant_id")
     .where("restaurant.public_id", "=", restaurantId)
     .orderBy(({ fn }) => fn.count("order.item_id"), "desc")
-    .select(["item.name", "item.public_id as id", "item.price", "item.description"])
+    .select([
+      "item.name",
+      "item.public_id as id",
+      "item.price",
+      "item.description"
+    ])
     .limit(1)
     .executeTakeFirstOrThrow(APIError.noResult("No products found"));
 
@@ -26,7 +31,12 @@ export async function leastSold(restaurantId: string) {
     .innerJoin("restaurant", "restaurant.id", "item.restaurant_id")
     .groupBy("order.item_id")
     .where("restaurant.public_id", "=", restaurantId)
-    .select(["item.name", "item.description", "item.price", "item.public_id as id"])
+    .select([
+      "item.name",
+      "item.description",
+      "item.price",
+      "item.public_id as id"
+    ])
     .orderBy(({ fn }) => fn.countAll(), "asc")
     .limit(1)
     .executeTakeFirstOrThrow(APIError.noResult("No products found."));

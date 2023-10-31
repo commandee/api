@@ -98,9 +98,7 @@ export default async function (fastify: FastifyInstance) {
     }
   );
 
-  fastify.post("/logout", {
-
-  }, async (request, reply) => {
+  fastify.post("/logout", {}, async (request, reply) => {
     await fastify.authenticateWithRestaurant(request, reply);
 
     const token = await reply.jwtSign({ id: request.user.id });
