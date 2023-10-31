@@ -39,21 +39,27 @@ export async function get(id: string): Promise<Order> {
   return parseOrder(result);
 }
 
-// export async function create(order: {
-//   notes?: string | undefined | null;
-//   priority?: "low" | "medium" | "high" | null;
-//   status?: "in_progress" | "pending" | "done" | null
-//   quantity: number;
-// }) {
-//   await db
-//     .insertInto("order")
-//     .values({
-//       notes: order.notes || null,
-//       priority: order.priority,
-//       quantity: order.quantity,
-//       status: order.status || null
-//     })
-// }
+export async function create(order: {
+  notes?: string | undefined | null;
+  priority?: "low" | "medium" | "high" | null;
+  status?: "in_progress" | "pending" | "done" | null
+  quantity: number;
+  itemId: string;
+}) {
+  await db
+    .insertInto("order")
+    .values({
+      notes: order.notes || null,
+      priority: order.priority,
+      quantity: order.quantity,
+      status: order.status || null,
+      item_id: (fn) => fn
+        .selectFrom("item")
+        .select("item.id")
+        .where("item.public_id", "=", order.itemId)
+        .executeTakeFirstOrThrow(APIError.noResult("Item not found"))
+    })
+}
 
 type Order = {
   id: string;
