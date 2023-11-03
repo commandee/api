@@ -17,8 +17,11 @@ model Commanda {
   table        Int?
   publicId     String     @unique @map("public_id") @db.VarChar(16)
   orders       Order[]
+  restaurantId String     @map("restaurant_id") @db.VarChar(36)
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
   @@map("commanda")
+  @@index([restaurantId])
 }
 
 model Employee {
@@ -93,6 +96,7 @@ model Restaurant {
   address      String        @db.VarChar(255)
   publicId     String        @unique @map("public_id") @db.VarChar(16)
   employements Employment[]
+  commandas    Commanda[]
   items        Item[]
 
   @@map("restaurant")

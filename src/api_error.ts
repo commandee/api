@@ -7,7 +7,7 @@ export default class APIError extends Error {
     this.statusCode = statusCode;
   }
 
-  static noResult(message: string) {
-    return () => new APIError(message, 404);
+  static noResult(message: string, statusCode = 404) {
+    return () => new APIError(message, statusCode);
   }
 }

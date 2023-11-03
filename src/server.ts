@@ -7,7 +7,6 @@ import type {
 } from "fastify";
 import * as path from "path";
 import { fileURLToPath } from "url";
-import type { Static, TSchema } from "@fastify/type-provider-typebox";
 import type {
   FromSchema,
   FromSchemaOptions,
@@ -23,14 +22,20 @@ import * as enviroment from "./enviroment";
 import APIError from "./api_error";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+export interface JsonSchemaToTsProvider<
+  Options extends FromSchemaOptions = FromSchemaDefaultOptions
+> extends FastifyTypeProvider {
+  output: this["input"] extends JSONSchema7
+    ? FromSchema<this["input"], Options>
+    : unknown;
+}
+
 interface TypeProvider<
   Options extends FromSchemaOptions = FromSchemaDefaultOptions
 > extends FastifyTypeProvider {
-  output: this["input"] extends TSchema
-    ? Static<this["input"]>
-    : this["input"] extends JSONSchema7
+  output: this["input"] extends JSONSchema7
     ? FromSchema<this["input"], Options>
-    : never;
+    : unknown;
 }
 
 const fastify = Fastify({
