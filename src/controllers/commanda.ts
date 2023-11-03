@@ -62,3 +62,16 @@ export async function getAllFrom(restaurant: string) {
 
   return result;
 }
+
+export async function getRestaurantOf(commandaId: string): Promise<string> {
+  const result = await db
+    .selectFrom("commanda")
+    .innerJoin("order", "order.commanda_id", "commanda.id")
+    .innerJoin("item", "item.id", "order.item_id")
+    .innerJoin("restaurant", "restaurant.id", "item.restaurant_id")
+    .select("restaurant.public_id as id")
+    .where("commanda.public_id", "=", commandaId)
+    .executeTakeFirstOrThrow(APIError.noResult("Commanda not found"));
+
+  return result.id;
+}

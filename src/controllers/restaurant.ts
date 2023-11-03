@@ -1,3 +1,4 @@
+import { sql } from "kysely";
 import APIError from "../api_error";
 import { genID } from "../crypt";
 import db from "../database/db";
@@ -83,3 +84,43 @@ export async function isEmployee({
 
   return role;
 }
+
+export async function areFromSameRestaurant(commandaId: string, itemId: string): Promise<void> {
+  const result = await sql<{
+    commandaRestaurant?: string | null;
+    itemRestaurant?: string | null;
+  }>`
+    SELECT
+      (SELECT \`restaurant_id\` FROM \`commanda\` WHERE \`public_id\` = ${commandaId}) as commanda,
+      (SELECT \`restaurant_id\` FROM \`item\` WHERE \`public_id\` = ${itemId}) as itemRestaurant
+  `.execute(db).then((result) => result.rows[0]);
+
+  if (!result.commandaRestaurant)
+    throw new APIError("Commanda was not found", 404);
+
+  if (!result.itemRestaurant)
+    throw new APIError("Item does not exist", 404);
+
+  if (result.commandaRestaurant != result.itemRestaurant)
+    throw new APIError("Item does not belong to the commanda's restaurant", 403);
+}
+
+/*
+SELECT `commanda`.`restaurant_id`, `item`.`restaurant_id`
+FROM `commanda`, `item`
+WHERE `commanda`.`public_id` = 'iiiiiiiiiiiiiiii'
+AND `item`.`public_id` = 'llllllllllllllll'
+*/
+
+/*
+SELECT
+  (SELECT `restaurant_id` FROM `commanda` WHERE `public_id` = 'iiiiiiiiiiiiiiii') as commanda,
+  (SELECT `restaurant_id` FROM `item` WHERE `public_id` = 'llllllllllllllll') as itemRestaurant
+*/
+
+/* 
+SELECT `commanda`.`restaurant_id` AS commandaRestaurant, `item`.`restaurant_id` AS itemRestaurant
+FROM (SELECT `restaurant_id` FROM `commanda` WHERE `public_id` = 'iiiiiiiiiiiiiiii') as commanda,
+(SELECT `restaurant_id` FROM `item` WHERE `public_id` = 'llllllllllllllll') as item
+*/
+
