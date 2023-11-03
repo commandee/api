@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "../server";
 import * as orderControl from "../controllers/order";
+import APIError from "../api_error";
 
 export default async function (fastify: FastifyInstance) {
   fastify.post(
@@ -42,4 +43,30 @@ export default async function (fastify: FastifyInstance) {
       return reply.send("Order placed successfully");
     }
   );
+
+  fastify.get("/:id", {
+    schema: {
+      params: {
+        type: "object",
+        properties: {
+          id: {
+            type: "string",
+            minLength: 16,
+            maxLength: 16,
+            description: "Public ID of the order",
+          },
+        },
+        required: ["id"]
+      }
+    } as const
+  }, async (request, reply) => {
+    await fastify.authenticateWithRestaurant(request, reply);
+
+    const order = await orderControl.get(request.params.id);
+
+    if (order.restaurantId !== request.user.restaurant!.id)
+      throw new APIError("You don't have access to this order", 403);
+
+    return reply.send(order);
+  });
 }
