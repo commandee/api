@@ -151,6 +151,34 @@ export async function info({
   };
 }
 
+export async function addEmployment(
+  employeeId: string,
+  restaurantId: string,
+  role?: Role
+): Promise<void> {
+  await Promise.all([
+    get(employeeId),
+    RestaurantControl.get(restaurantId),
+  ]);
+
+  const result = await db
+    .insertInto("employment")
+    .values(({ selectFrom }) => ({
+      employee_id: selectFrom("employee")
+        .select("id")
+        .where("public_id", "=", employeeId),
+      restaurant_id: selectFrom("restaurant")
+        .select("id")
+        .where("public_id", "=", restaurantId),
+      role
+    }))
+    .executeTakeFirst();
+
+  if (result?.numInsertedOrUpdatedRows !== 1n) {
+    throw new APIError("Employment not created", 500);
+  }
+}
+
 export async function worksAt(userId: string) {
   const result = await db
     .selectFrom("employment")

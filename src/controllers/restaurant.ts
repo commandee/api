@@ -15,14 +15,14 @@ export async function get(id: string) {
   return restaurant;
 }
 
-export async function create(restaurant: { name: string; address: string }) {
+export async function create(restaurant: { name: string; address: string }): Promise<string> {
   const public_id = await genID();
 
   const result = await db
     .insertInto("restaurant")
     .values({
-      ...restaurant,
-      id: undefined,
+      name: restaurant.name,
+      address: restaurant.address,
       public_id
     })
     .executeTakeFirst();
@@ -31,7 +31,7 @@ export async function create(restaurant: { name: string; address: string }) {
     throw new APIError("Restaurant not created", 500);
   }
 
-  return result;
+  return public_id;
 }
 
 export async function login({

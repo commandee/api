@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "../server";
 import * as orderControl from "../controllers/order";
+import * as itemControl from "../controllers/item";
 import APIError from "../api_error";
 
 export default async function (fastify: FastifyInstance) {
@@ -38,6 +39,9 @@ export default async function (fastify: FastifyInstance) {
     },
     async (request, reply) => {
       await fastify.authenticateWithRestaurant(request, reply);
+
+      if (request.user?.restaurant?.id != (await itemControl.get(request.body.order.itemId)).restaurantId)
+        throw new APIError("You don't have access to this item", 403);
 
       await orderControl.create(request.body.order, request.body.commandaId);
       return reply.send("Order placed successfully");

@@ -1,4 +1,5 @@
 import APIError from "../api_error";
+import { genID } from "../crypt";
 import db from "../database/db";
 
 export async function get(id: string) {
@@ -19,6 +20,34 @@ export async function get(id: string) {
     ...item,
     description: item.description ?? undefined
   };
+}
+
+export async function create(item: {
+  name: string;
+  price: number;
+  description?: string;
+  restaurantId: string;
+}) {
+  const publicId = await genID();
+
+  const result = await db
+    .insertInto("item")
+    .values(({ selectFrom }) => ({
+      name: item.name,
+      price: item.price,
+      description: item.description,
+      public_id: publicId,
+      restaurant_id: selectFrom("restaurant")
+        .select("id")
+        .where("public_id", "=", item.restaurantId)
+    }))
+    .executeTakeFirst();
+
+  if (result.numInsertedOrUpdatedRows !== 1n) {
+    throw new APIError("Item not created", 500);
+  }
+
+  return publicId;
 }
 
 export async function getMenu(restaurantId: string) {
