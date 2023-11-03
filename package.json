@@ -30,7 +30,7 @@
     "eslint-config-prettier": "^8.8.0",
     "kysely-codegen": "^0.10.1",
     "prettier": "^3.0.0",
-    "prisma": "^5.4.2",
+    "prisma": "^5.5.2",
     "prisma-kysely": "^1.5.0",
     "terser": "^5.19.2",
     "typescript": "^5.0.2",
