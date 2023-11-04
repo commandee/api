@@ -1,0 +1,15 @@
+meta {
+  name: whoami
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{url}}/user/whoami
+  body: none
+  auth: none
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IkZjWVBMMGtmbHVxRFdBbXciLCJpYXQiOjE2OTkxMTgxODIsImV4cCI6MTY5OTEyNTM4Mn0.wu6E_xVv6XXMYPpJc5tkMeRr0hRshMKx4FZT7OAgxJM
+}

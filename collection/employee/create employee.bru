@@ -6,6 +6,24 @@ meta {
 
 post {
   url: {{url}}/user
-  body: none
+  body: json
   auth: none
+}
+
+body:json {
+  {
+    "username": "{{ username }}",
+    "email": "{{ email }}",
+    "password": "{{ password }}"
+  }
+}
+
+vars:pre-request {
+  username: isa
+  email: isa@email.com
+  password: tectectec
+}
+
+vars:post-response {
+  token: res.headers.authorization
 }

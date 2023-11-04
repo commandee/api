@@ -1,7 +1,17 @@
+headers {
+  Authorization: {{token}}
+}
+
 auth {
-  mode: bearer
+  mode: none
 }
 
 auth:bearer {
-  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImJjeVZWTzN2b3V6UWtBUVUiLCJyZXN0YXVyYW50Ijp7ImlkIjoiYUFBQUFBQUFBQUFBQUFBQSIsInJvbGUiOiJhZG1pbiJ9LCJpYXQiOjE2OTc2ODQwOTQsImV4cCI6MTY5NzY5MTI5NH0.YlBhwUmrS_26MGp_N_aUHlBDFtpUSl51KLrhrxnkoyM
+  token: {{token}}
+}
+
+script:post-response {
+  if (res.headers.authorization) {
+    bru.setVar("token", res.headers.authorization);
+  }
 }
