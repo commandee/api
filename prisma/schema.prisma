@@ -65,6 +65,7 @@ model Item {
   description  String?    @db.VarChar(255)
   restaurantId Bytes      @map("restaurant_id") @db.Binary(16)
   publicId     String     @unique @map("public_id") @db.Char(16)
+  available    Boolean    @default(true)
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   orders       Order[]
 

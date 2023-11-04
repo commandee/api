@@ -2,7 +2,16 @@ import APIError from "../api_error";
 import { genID } from "../crypt";
 import db from "../database/db";
 
-export async function get(id: string) {
+type Item = {
+  id: string;
+  name: string;
+  price: number;
+  description?: string;
+  available: boolean;
+  restaurantId: string;
+}
+
+export async function get(id: string): Promise<Item> {
   const item = await db
     .selectFrom("item")
     .where("item.public_id", "=", id)
@@ -12,12 +21,14 @@ export async function get(id: string) {
       "item.name",
       "item.price",
       "item.description",
-      "restaurant.public_id as restaurantId"
+      "item.available",
+      "restaurant.public_id as restaurantId",
     ])
     .executeTakeFirstOrThrow(APIError.noResult("Item not found"));
 
   return {
     ...item,
+    available: item.available === 1,
     description: item.description ?? undefined
   };
 }
@@ -50,26 +61,30 @@ export async function create(item: {
   return publicId;
 }
 
-export async function getAllFrom(restaurantId: string) {
+export async function getAllFrom(restaurantId: string, includeUnavailable: boolean = false): Promise<Item[]> {
   const menu = await db
     .selectFrom("item")
     .innerJoin("restaurant", "restaurant.id", "item.restaurant_id")
     .select([
       "item.name",
       "item.price",
+      "item.description",
+      "item.available",
       "item.public_id as id",
-      "item.description"
+      "restaurant.public_id as restaurantId"
     ])
+    .where("item.available", includeUnavailable ? "<=" : "=", 1)
     .where("restaurant.public_id", "=", restaurantId)
     .execute();
 
   return menu.map((item) => ({
     ...item,
+    available: item.available === 1,
     description: item.description ?? undefined
   }));
 }
 
-export async function del(itemId: string) {
+export async function del(itemId: string): Promise<void> {
   const result = await db
     .deleteFrom("item")
     .where("public_id", "=", itemId)
@@ -77,6 +92,18 @@ export async function del(itemId: string) {
 
   if (result?.numDeletedRows !== 1n) {
     throw new APIError("Item not deleted", 500);
+  }
+}
+
+export async function setAvailable(itemId: string, available: boolean): Promise<void> {
+  const result = await db
+    .updateTable("item")
+    .set({ available: available ? 1 : 0 })
+    .where("public_id", "=", itemId)
+    .executeTakeFirst();
+
+  if (result?.numUpdatedRows !== 1n) {
+    throw new APIError("Item not updated", 500);
   }
 }
 

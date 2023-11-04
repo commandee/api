@@ -10,27 +10,25 @@ export default async function (fastify: FastifyInstance) {
       schema: {
         summary: "Get menu from current restaurant",
         tags: ["restaurant", "item"],
-        response: {
-          200: {
-            type: "array",
-            description: "List of items in the menu",
-            items: {
-              type: "object",
-              properties: {
-                description: { type: "string" },
-                id: { type: "string", minLength: 16, maxLength: 16 },
-                name: { type: "string", minLength: 3, maxLength: 255 },
-                price: { type: "number", minimum: 0 }
-              },
-              required: ["id", "name", "price"]
+        querystring: {
+          type: "object",
+          properties: {
+            includeUnavailable: {
+              type: "boolean",
+              default: false,
+              description: "Include unavailable items in the response"
             }
-          }
+          },
+          additionalProperties: false
         }
       } as const
     },
     async (request, reply) => {
       await fastify.authenticateWithRestaurant(request, reply);
-      const menu = await itemControl.getAllFrom(request.user.restaurant!.id);
+      const menu = await itemControl.getAllFrom(
+        request.user.restaurant!.id,
+        request.query.includeUnavailable
+      );
 
       return reply.send(menu);
     }
@@ -121,6 +119,47 @@ export default async function (fastify: FastifyInstance) {
       });
 
       return reply.send(await itemControl.get(itemId));
+    }
+  );
+
+  fastify.patch(
+    "/available",
+    {
+      schema: {
+        body: {
+          type: "object",
+          properties: {
+            itemId: {
+              type: "string",
+              minLength: 16,
+              maxLength: 16,
+              description: "Public ID of the item"
+            },
+            available: {
+              type: "boolean",
+              description: "Whether the item is available or not"
+            }
+          },
+          required: ["itemId", "available"],
+          additionalProperties: false
+        }
+      } as const
+    },
+    async (request, reply) => {
+      await fastify.authenticateWithRestaurant(request, reply);
+
+      const itemId = request.body.itemId;
+      const available = request.body.available;
+
+      const item = await itemControl.get(itemId);
+
+      if (item.restaurantId !== request.user.restaurant!.id) {
+        throw new APIError("You don't have access to this item", 403);
+      }
+
+      await itemControl.setAvailable(itemId, available);
+
+      return reply.send("Item availability updated successfully");
     }
   );
 
