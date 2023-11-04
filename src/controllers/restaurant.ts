@@ -53,7 +53,7 @@ export async function login({
   const [restaurant, employee, role] = await Promise.all([
     get(restaurantId),
     employeeControl.get(userId),
-    isEmployee({ userId, restaurantId })
+    isEmployee(userId, restaurantId)
   ]);
 
   return {
@@ -65,13 +65,10 @@ export async function login({
   };
 }
 
-export async function isEmployee({
-  userId,
-  restaurantId
-}: {
-  userId: string;
-  restaurantId: string;
-}): Promise<Role> {
+export async function isEmployee(
+  userId: string,
+  restaurantId: string
+): Promise<Role> {
   const { role } = await db
     .selectFrom("employment")
     .innerJoin("restaurant", "restaurant.id", "employment.restaurant_id")

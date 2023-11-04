@@ -1,7 +1,5 @@
 import type { FastifyInstance } from "../server";
 import * as userControl from "../controllers/employee";
-import * as restaurantControl from "../controllers/restaurant";
-import APIError from "../api_error";
 
 export default async function (fastify: FastifyInstance) {
   fastify.post(
@@ -101,7 +99,10 @@ export default async function (fastify: FastifyInstance) {
       const loginInfo = request.body;
       const user = await userControl.login(loginInfo);
 
-      return reply.sendLogin({ userId: user.id, restaurantId: loginInfo.restaurantId });
+      return reply.sendLogin({
+        userId: user.id,
+        restaurantId: loginInfo.restaurantId
+      });
     }
   );
 
@@ -186,99 +187,19 @@ export default async function (fastify: FastifyInstance) {
       } as const
     },
     async (request, reply) => {
-      await userControl.drop(request.body);
+      await userControl.del(request.body);
       return reply.send("User deleted successfully");
     }
   );
 
-  fastify.get(
-    "/:id",
+  fastify.patch(
+    "/change-id",
     {
       schema: {
-        summary: "Get user by public ID",
-        tags: ["user"],
-        params: {
-          type: "object",
-          properties: {
-            id: { type: "string", minLength: 3, maxLength: 255 }
-          },
-          required: ["id"],
-          additionalProperties: false
-        },
         response: {
           200: {
             type: "object",
-            properties: {
-              id: { type: "string", minLength: 16, maxLength: 16 },
-              username: { type: "string", minLength: 3, maxLength: 255 },
-              email: { type: "string", format: "email", maxLength: 255 },
-              role: { type: "string", enum: ["admin", "employee"] }
-            },
-            required: ["id", "username", "email", "role"],
-            additionalProperties: false
-          }
-        },
-        produces: ["application/json", "text/plain"]
-      } as const
-    },
-    async (request, reply) => {
-      await fastify.authenticateWithRestaurant(request, reply);
-
-      const { id } = request.params;
-
-      if (id !== request.user.id && request.user.restaurant?.role !== "admin")
-        throw new APIError(
-          "You cannot request users other than yourself or your employees",
-          403
-        );
-
-      const [user, role] = await Promise.all([
-        userControl.get(id),
-        restaurantControl.isEmployee({
-          userId: id,
-          restaurantId: request.user.restaurant?.id!
-        })
-      ]);
-
-      return reply.send({
-        ...user,
-        role
-      });
-    }
-  );
-
-  fastify.patch("/change-id", {
-    schema: {
-      response: {
-        200: {
-          type: "object",
-          description: "New login information for the user"
-        }
-      }
-    }
-  }, async (request, reply) => {
-    await fastify.authenticate(request, reply);
-
-    const newId = await userControl.changeId(request.user.id);
-    return reply.sendLogin({ userId: newId, restaurantId: request.user.restaurant?.id });
-  });
-
-  fastify.get(
-    "/restaurants",
-    {
-      schema: {
-        response: {
-          200: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                id: { type: "string", minLength: 16, maxLength: 16 },
-                name: { type: "string", minLength: 3, maxLength: 255 },
-                address: { type: "string", minLength: 3, maxLength: 255 }
-              },
-              required: ["id", "name", "address"]
-            }
+            description: "New login information for the user"
           }
         }
       }
@@ -286,10 +207,11 @@ export default async function (fastify: FastifyInstance) {
     async (request, reply) => {
       await fastify.authenticate(request, reply);
 
-      const restaurantId = request.user.id;
-      const worksAt = await userControl.worksAt(restaurantId);
-
-      return reply.send(worksAt);
+      const newId = await userControl.changeId(request.user.id);
+      return reply.sendLogin({
+        userId: newId,
+        restaurantId: request.user.restaurant?.id
+      });
     }
   );
 }

@@ -50,7 +50,7 @@ export async function create(item: {
   return publicId;
 }
 
-export async function getMenu(restaurantId: string) {
+export async function getAllFrom(restaurantId: string) {
   const menu = await db
     .selectFrom("item")
     .innerJoin("restaurant", "restaurant.id", "item.restaurant_id")
@@ -67,6 +67,17 @@ export async function getMenu(restaurantId: string) {
     ...item,
     description: item.description ?? undefined
   }));
+}
+
+export async function del(itemId: string) {
+  const result = await db
+    .deleteFrom("item")
+    .where("public_id", "=", itemId)
+    .executeTakeFirst();
+
+  if (result?.numDeletedRows !== 1n) {
+    throw new APIError("Item not deleted", 500);
+  }
 }
 
 export async function countMenu(restaurantId: string) {

@@ -5,6 +5,23 @@ import APIError from "../api_error";
 import * as RestaurantControl from "./restaurant";
 import type { Role } from "../database/generated/schema/enums";
 
+export async function getAllFrom(restaurantId: string) {
+  const result = await db
+    .selectFrom("employment")
+    .innerJoin("employee", "employee.id", "employment.employee_id")
+    .innerJoin("restaurant", "restaurant.id", "employment.restaurant_id")
+    .where("restaurant.public_id", "=", restaurantId)
+    .select([
+      "employee.public_id as id",
+      "employee.username",
+      "employee.email",
+      "employment.role"
+    ])
+    .execute();
+
+  return result;
+}
+
 export async function get(id: string) {
   const employee = await db
     .selectFrom("employee")
@@ -23,22 +40,6 @@ export async function getByUsername(username: string) {
     .executeTakeFirstOrThrow(APIError.noResult("Employee not found"));
 
   return employee;
-}
-
-export async function changeId(currentId: string): Promise<string> {
-  const newId = await genID();
-
-  const response = await db
-    .updateTable("employee")
-    .set({ public_id: newId })
-    .where("public_id", "=", currentId)
-    .executeTakeFirst();
-
-  if (response?.numUpdatedRows !== 1n) {
-    throw new APIError("Employee not updated", 500);
-  }
-
-  return newId;
 }
 
 export async function create(employee: {
@@ -91,7 +92,7 @@ export async function login({
 
   const [role, restaurant] = await Promise.all([
     restaurantId
-      ? RestaurantControl.isEmployee({ userId: user.id, restaurantId })
+      ? RestaurantControl.isEmployee(user.id, restaurantId)
       : undefined,
     restaurantId ? RestaurantControl.get(restaurantId) : undefined,
     bcrypt.compare(password, user.hashedPassword).then((valid) => {
@@ -106,7 +107,23 @@ export async function login({
   };
 }
 
-export async function drop({
+export async function changeId(currentId: string): Promise<string> {
+  const newId = await genID();
+
+  const response = await db
+    .updateTable("employee")
+    .set({ public_id: newId })
+    .where("public_id", "=", currentId)
+    .executeTakeFirst();
+
+  if (response?.numUpdatedRows !== 1n) {
+    throw new APIError("Employee not updated", 500);
+  }
+
+  return newId;
+}
+
+export async function del({
   email,
   password
 }: {
@@ -139,7 +156,7 @@ export async function info({
 
   if (restaurantId) {
     promises[1] = RestaurantControl.get(restaurantId);
-    promises[2] = RestaurantControl.isEmployee({ userId, restaurantId });
+    promises[2] = RestaurantControl.isEmployee(userId, restaurantId);
   }
 
   const [employee, restaurant, role] = await Promise.all(promises);
@@ -170,23 +187,6 @@ export async function worksAt(userId: string) {
       "restaurant.public_id as id",
       "restaurant.name",
       "restaurant.address"
-    ])
-    .execute();
-
-  return result;
-}
-
-export async function getEmployees(restaurantId: string) {
-  const result = await db
-    .selectFrom("employment")
-    .innerJoin("employee", "employee.id", "employment.employee_id")
-    .innerJoin("restaurant", "restaurant.id", "employment.restaurant_id")
-    .where("restaurant.public_id", "=", restaurantId)
-    .select([
-      "employee.public_id as id",
-      "employee.username",
-      "employee.email",
-      "employment.role"
     ])
     .execute();
 

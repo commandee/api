@@ -2,6 +2,22 @@ import APIError from "../api_error";
 import { genID } from "../crypt";
 import db from "../database/db";
 
+export async function getAll(restaurantId: string) {
+  const result = await db
+    .selectFrom("commanda")
+    .innerJoin("restaurant", "restaurant.id", "commanda.restaurant_id")
+    .where("restaurant.public_id", "=", restaurantId)
+    .select([
+      "commanda.costumer",
+      "commanda.table",
+      "commanda.public_id as id",
+      "restaurant.public_id as restaurantId"
+    ])
+    .execute();
+
+  return result;
+}
+
 export async function get(id: string) {
   const commanda = await db
     .selectFrom("order")
@@ -42,35 +58,28 @@ export async function create(
     }))
     .executeTakeFirstOrThrow();
 
-  return result.numInsertedOrUpdatedRows === 1n;
+  if (result.numInsertedOrUpdatedRows !== 1n)
+    throw new APIError("Commanda not created", 500);
 }
 
-export async function getAllFrom(restaurant: string) {
+export async function del(id: string) {
   const result = await db
-    .selectFrom("order")
-    .innerJoin("commanda", "commanda.id", "order.commanda_id")
-    .innerJoin("item", "item.id", "order.item_id")
-    .innerJoin("restaurant", "restaurant.id", "item.restaurant_id")
-    .select([
-      "commanda.costumer",
-      "commanda.table",
-      "commanda.public_id as id",
-      "restaurant.public_id as restaurant"
-    ])
-    .where("restaurant.public_id", "=", restaurant)
-    .execute();
+    .deleteFrom("commanda")
+    .where("public_id", "=", id)
+    .executeTakeFirst();
 
-  return result;
+  if (result?.numDeletedRows !== 1n)
+    throw new APIError("Commanda not deleted", 500);
 }
 
-export async function getRestaurantOf(commandaId: string): Promise<string> {
+export async function getRestaurantOf(id: string): Promise<string> {
   const result = await db
     .selectFrom("commanda")
     .innerJoin("order", "order.commanda_id", "commanda.id")
     .innerJoin("item", "item.id", "order.item_id")
     .innerJoin("restaurant", "restaurant.id", "item.restaurant_id")
     .select("restaurant.public_id as id")
-    .where("commanda.public_id", "=", commandaId)
+    .where("commanda.public_id", "=", id)
     .executeTakeFirstOrThrow(APIError.noResult("Commanda not found"));
 
   return result.id;

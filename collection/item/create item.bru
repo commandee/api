@@ -1,0 +1,17 @@
+meta {
+  name: create item
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{url}}/item
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  name: Nuggets
+  price: 570
+  description: Narget de frango
+}

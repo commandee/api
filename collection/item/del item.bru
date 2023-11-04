@@ -1,0 +1,15 @@
+meta {
+  name: del item
+  type: http
+  seq: 4
+}
+
+delete {
+  url: {{url}}/item/{{itemId}}
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  itemId: ghTy4eGau3IDPG9U
+}

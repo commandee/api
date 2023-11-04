@@ -1,9 +1,38 @@
 import type { FastifyInstance } from "../server";
 import * as restaurantControl from "../controllers/restaurant";
 import * as employeeControl from "../controllers/employee";
-import APIError from "../api_error";
 
 export default async function (fastify: FastifyInstance) {
+  fastify.get(
+    "/",
+    {
+      schema: {
+        response: {
+          200: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                id: { type: "string", minLength: 16, maxLength: 16 },
+                name: { type: "string", minLength: 3, maxLength: 255 },
+                address: { type: "string", minLength: 3, maxLength: 255 }
+              },
+              required: ["id", "name", "address"]
+            }
+          }
+        }
+      }
+    },
+    async (request, reply) => {
+      await fastify.authenticate(request, reply);
+
+      const restaurantId = request.user.id;
+      const worksAt = await employeeControl.worksAt(restaurantId);
+
+      return reply.send(worksAt);
+    }
+  );
+
   fastify.get(
     "/:id",
     {
@@ -62,6 +91,36 @@ export default async function (fastify: FastifyInstance) {
     }
   );
 
+  fastify.delete(
+    "/leave",
+    {
+      schema: {
+        body: {
+          type: "object",
+          properties: {
+            userId: {
+              type: "string",
+              minLength: 16,
+              maxLength: 16,
+              description: "Public ID of the user"
+            }
+          },
+          required: ["userId"]
+        }
+      } as const
+    },
+    async (request, reply) => {
+      await fastify.authenticateWithRestaurant(request, reply);
+
+      const { userId } = request.body;
+      const { id: restaurantId } = request.user.restaurant!;
+
+      await restaurantControl.dismiss(userId, restaurantId);
+
+      return reply.send("Left restaurant successfully.");
+    }
+  );
+
   fastify.post(
     "/login",
     {
@@ -111,202 +170,6 @@ export default async function (fastify: FastifyInstance) {
       await restaurantControl.login({ userId, restaurantId });
 
       return reply.sendLogin({ userId, restaurantId });
-    }
-  );
-
-  fastify.post(
-    "/employ",
-    {
-      schema: {
-        body: {
-          type: "object",
-          properties: {
-            userId: {
-              type: "string",
-              minLength: 16,
-              maxLength: 16,
-              description: "Public ID of the user"
-            },
-            role: { type: "string", enum: ["admin", "employee"] }
-          },
-          required: ["userId"]
-        }
-      } as const
-    },
-    async (request, reply) => {
-      await fastify.authenticateWithRestaurant(request, reply);
-
-      if (request.user.restaurant!.role !== "admin")
-        throw new APIError("You don't have permission to add employees", 403);
-
-      const { userId, role } = request.body;
-      const { id: restaurantId } = request.user.restaurant!;
-
-      await restaurantControl.addEmployment(userId, restaurantId, role);
-
-      return reply.send("Employee added successfully.");
-    }
-  );
-
-  fastify.post(
-    "/dismiss",
-    {
-      schema: {
-        body: {
-          type: "object",
-          properties: {
-            userId: {
-              type: "string",
-              minLength: 16,
-              maxLength: 16,
-              description: "Public ID of the user"
-            }
-          },
-          required: ["userId"]
-        }
-      } as const
-    },
-    async (request, reply) => {
-      await fastify.authenticateWithRestaurant(request, reply);
-
-      if (request.user.restaurant!.role !== "admin")
-        throw new APIError(
-          "You don't have permission to dismiss employees",
-          403
-        );
-
-      const { userId } = request.body;
-      const { id: restaurantId } = request.user.restaurant!;
-
-      await restaurantControl.dismiss(userId, restaurantId);
-
-      return reply.send("Employee dismissed successfully.");
-    }
-  );
-
-  fastify.post(
-    "/demote",
-    {
-      schema: {
-        body: {
-          type: "object",
-          properties: {
-            userId: {
-              type: "string",
-              minLength: 16,
-              maxLength: 16,
-              description: "Public ID of the user"
-            }
-          },
-          required: ["userId"]
-        }
-      } as const
-    },
-    async (request, reply) => {
-      await fastify.authenticateWithRestaurant(request, reply);
-
-      if (request.user.restaurant!.role !== "admin")
-        throw new APIError(
-          "You don't have permission to demote employees",
-          403
-        );
-
-      const { userId } = request.body;
-      const { id: restaurantId } = request.user.restaurant!;
-
-      await restaurantControl.setRole(userId, restaurantId, "employee");
-
-      return reply.send("Employee demoted successfully.");
-    }
-  );
-
-  fastify.post(
-    "/promote",
-    {
-      schema: {
-        body: {
-          type: "object",
-          properties: {
-            userId: {
-              type: "string",
-              minLength: 16,
-              maxLength: 16,
-              description: "Public ID of the user"
-            }
-          },
-          required: ["userId"]
-        }
-      } as const
-    },
-    async (request, reply) => {
-      await fastify.authenticateWithRestaurant(request, reply);
-
-      if (request.user.restaurant!.role !== "admin")
-        throw new APIError("You don't have permission to promote employees", 403);
-
-      const { userId } = request.body;
-      const { id: restaurantId } = request.user.restaurant!;
-
-      await restaurantControl.setRole(userId, restaurantId, "admin");
-
-      return reply.send("Employee promoted successfully.");
-    }
-  );
-
-  fastify.post("/role", {
-    schema: {
-      body: {
-        type: "object",
-        properties: {
-          userId: {
-            type: "string",
-            minLength: 16,
-            maxLength: 16,
-            description: "Public ID of the user"
-          },
-          role: { type: "string", enum: ["admin", "employee"] }
-        },
-        required: ["role", "userId"]
-      }
-    } as const
-  }, async (request, reply) => {
-    await fastify.authenticateWithRestaurant(request, reply);
-
-    const { role, userId } = request.body;
-    const { id: restaurantId } = request.user.restaurant!;
-
-    await restaurantControl.setRole(userId, restaurantId, role);
-
-    return reply.send("Role changed successfully.");
-  });
-
-  fastify.post(
-    "/leave",
-    {
-      schema: {
-        body: {
-          type: "object",
-          properties: {
-            userId: {
-              type: "string",
-              minLength: 16,
-              maxLength: 16,
-              description: "Public ID of the user"
-            }
-          },
-          required: ["userId"]
-        }
-      } as const
-    },
-    async (request, reply) => {
-      await fastify.authenticateWithRestaurant(request, reply);
-
-      const { userId } = request.body;
-      const { id: restaurantId } = request.user.restaurant!;
-
-      await restaurantControl.dismiss(userId, restaurantId);
-
-      return reply.send("Left restaurant successfully.");
     }
   );
 
