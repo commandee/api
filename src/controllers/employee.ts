@@ -25,12 +25,28 @@ export async function getByUsername(username: string) {
   return employee;
 }
 
+export async function changeId(currentId: string): Promise<string> {
+  const newId = await genID();
+
+  const response = await db
+    .updateTable("employee")
+    .set({ public_id: newId })
+    .where("public_id", "=", currentId)
+    .executeTakeFirst();
+
+  if (response?.numUpdatedRows !== 1n) {
+    throw new APIError("Employee not updated", 500);
+  }
+
+  return newId;
+}
+
 export async function create(employee: {
   username: string;
   email: string;
   password: string;
 }) {
-  const [public_id, encryptedPassword] = await Promise.all([
+  const [publicId, encryptedPassword] = await Promise.all([
     genID(),
     encrypt(employee.password)
   ]);
@@ -40,7 +56,7 @@ export async function create(employee: {
     .values({
       ...employee,
       id: undefined,
-      public_id,
+      public_id: publicId,
       password: encryptedPassword
     })
     .executeTakeFirst();
@@ -48,6 +64,8 @@ export async function create(employee: {
   if (result?.numInsertedOrUpdatedRows !== 1n) {
     throw new APIError("Employee not created", 500);
   }
+
+  return publicId;
 }
 
 export async function login({
@@ -58,15 +76,16 @@ export async function login({
   email: string;
   password: string;
   restaurantId?: string;
-}) {
+}): Promise<{
+  id: string;
+  restaurant?: {
+    id: string;
+    role: Role;
+  };
+}> {
   const user = await db
     .selectFrom("employee")
-    .select([
-      "password as hashedPassword",
-      "public_id as id",
-      "email",
-      "username"
-    ])
+    .select(["password as hashedPassword", "public_id as id"])
     .where("email", "=", email)
     .executeTakeFirstOrThrow(APIError.noResult("Employee not found"));
 
@@ -83,17 +102,7 @@ export async function login({
 
   return {
     id: user.id,
-    email: user.email,
-    username: user.username,
-    restaurant:
-      restaurant && role
-        ? {
-            id: restaurant.id,
-            name: restaurant.name,
-            address: restaurant.address,
-            role
-          }
-        : undefined
+    restaurant: restaurant && role && { id: restaurant.id, role }
   };
 }
 
@@ -149,34 +158,6 @@ export async function info({
           }
         : undefined
   };
-}
-
-export async function addEmployment(
-  employeeId: string,
-  restaurantId: string,
-  role?: Role
-): Promise<void> {
-  await Promise.all([
-    get(employeeId),
-    RestaurantControl.get(restaurantId),
-  ]);
-
-  const result = await db
-    .insertInto("employment")
-    .values(({ selectFrom }) => ({
-      employee_id: selectFrom("employee")
-        .select("id")
-        .where("public_id", "=", employeeId),
-      restaurant_id: selectFrom("restaurant")
-        .select("id")
-        .where("public_id", "=", restaurantId),
-      role
-    }))
-    .executeTakeFirst();
-
-  if (result?.numInsertedOrUpdatedRows !== 1n) {
-    throw new APIError("Employment not created", 500);
-  }
 }
 
 export async function worksAt(userId: string) {

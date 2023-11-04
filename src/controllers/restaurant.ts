@@ -3,7 +3,7 @@ import APIError from "../api_error";
 import { genID } from "../crypt";
 import db from "../database/db";
 import type { Role } from "../database/generated/schema/enums";
-import * as EmployeeControl from "./employee";
+import * as employeeControl from "./employee";
 
 export async function get(id: string) {
   const restaurant = await db
@@ -15,7 +15,10 @@ export async function get(id: string) {
   return restaurant;
 }
 
-export async function create(restaurant: { name: string; address: string }): Promise<string> {
+export async function create(restaurant: {
+  name: string;
+  address: string;
+}): Promise<string> {
   const public_id = await genID();
 
   const result = await db
@@ -40,25 +43,23 @@ export async function login({
 }: {
   userId: string;
   restaurantId: string;
-}) {
+}): Promise<{
+  id: string;
+  restaurant: {
+    id: string;
+    role: Role;
+  };
+}> {
   const [restaurant, employee, role] = await Promise.all([
     get(restaurantId),
-    EmployeeControl.get(userId),
+    employeeControl.get(userId),
     isEmployee({ userId, restaurantId })
   ]);
 
-  if (!role) {
-    throw new APIError("Employee is not part of this restaurant", 403);
-  }
-
   return {
     id: employee.id,
-    username: employee.username,
-    email: employee.email,
     restaurant: {
       id: restaurant.id,
-      name: restaurant.name,
-      address: restaurant.address,
       role
     }
   };
@@ -85,7 +86,68 @@ export async function isEmployee({
   return role;
 }
 
-export async function areFromSameRestaurant(commandaId: string, itemId: string): Promise<void> {
+export async function addEmployment(
+  employeeId: string,
+  restaurantId: string,
+  role?: Role
+): Promise<void> {
+  await Promise.all([employeeControl.get(employeeId), get(restaurantId)]);
+
+  const result = await db
+    .insertInto("employment")
+    .values(({ selectFrom }) => ({
+      employee_id: selectFrom("employee")
+        .select("id")
+        .where("public_id", "=", employeeId),
+      restaurant_id: selectFrom("restaurant")
+        .select("id")
+        .where("public_id", "=", restaurantId),
+      role
+    }))
+    .executeTakeFirst();
+
+  if (result?.numInsertedOrUpdatedRows !== 1n) {
+    throw new APIError("Employment not created", 500);
+  }
+}
+
+export async function dismiss(employeeId: string, restaurantId: string) {
+  const result = await db
+    .deleteFrom("employment")
+    .innerJoin("restaurant", "restaurant.id", "employment.restaurant_id")
+    .innerJoin("employee", "employee.id", "employment.employee_id")
+    .where("employee.public_id", "=", employeeId)
+    .where("restaurant.public_id", "=", restaurantId)
+    .executeTakeFirst();
+
+  if (result?.numDeletedRows !== 1n) {
+    throw new APIError("Employment not deleted", 500);
+  }
+}
+
+export async function setRole(
+  employeeId: string,
+  restaurantId: string,
+  role: Role
+) {
+  const result = await db
+    .updateTable("employment")
+    .set({ role })
+    .innerJoin("restaurant", "restaurant.id", "employment.restaurant_id")
+    .innerJoin("employee", "employee.id", "employment.employee_id")
+    .where("employee.public_id", "=", employeeId)
+    .where("restaurant.public_id", "=", restaurantId)
+    .executeTakeFirst();
+
+  if (result?.numUpdatedRows !== 1n) {
+    throw new APIError("Role not changed", 500);
+  }
+}
+
+export async function areFromSameRestaurant(
+  commandaId: string,
+  itemId: string
+): Promise<void> {
   const result = await sql<{
     commandaRestaurant?: string | null;
     itemRestaurant?: string | null;
@@ -93,16 +155,20 @@ export async function areFromSameRestaurant(commandaId: string, itemId: string):
     SELECT
       (SELECT \`restaurant_id\` FROM \`commanda\` WHERE \`public_id\` = ${commandaId}) as commanda,
       (SELECT \`restaurant_id\` FROM \`item\` WHERE \`public_id\` = ${itemId}) as itemRestaurant
-  `.execute(db).then((result) => result.rows[0]);
+  `
+    .execute(db)
+    .then((result) => result.rows[0]);
 
   if (!result.commandaRestaurant)
     throw new APIError("Commanda was not found", 404);
 
-  if (!result.itemRestaurant)
-    throw new APIError("Item does not exist", 404);
+  if (!result.itemRestaurant) throw new APIError("Item does not exist", 404);
 
   if (result.commandaRestaurant != result.itemRestaurant)
-    throw new APIError("Item does not belong to the commanda's restaurant", 403);
+    throw new APIError(
+      "Item does not belong to the commanda's restaurant",
+      403
+    );
 }
 
 /*
@@ -123,4 +189,3 @@ SELECT `commanda`.`restaurant_id` AS commandaRestaurant, `item`.`restaurant_id` 
 FROM (SELECT `restaurant_id` FROM `commanda` WHERE `public_id` = 'iiiiiiiiiiiiiiii') as commanda,
 (SELECT `restaurant_id` FROM `item` WHERE `public_id` = 'llllllllllllllll') as item
 */
-
