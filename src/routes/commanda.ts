@@ -38,7 +38,7 @@ export default async function (fastify: FastifyInstance) {
       } as const
     },
     async (request, reply) => {
-      fastify.authenticateWithRestaurant(request, reply);
+      await fastify.authenticateWithRestaurant(request, reply);
 
       const commanda = request.body;
       const restaurantId = request.user.restaurant!.id;
