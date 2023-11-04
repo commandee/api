@@ -103,7 +103,7 @@ fastify.decorate(
 fastify.decorate(
   "authenticateWithRestaurant",
   async function (request: FastifyRequest, reply: FastifyReply) {
-    fastify.authenticate(request, reply);
+    await fastify.authenticate(request, reply);
 
     if (!request.user.restaurant?.id) {
       throw new APIError("User is not logged in to a restaurant", 403);
@@ -139,6 +139,32 @@ fastify.decorateRequest(
   }
 );
 
+fastify.decorateReply("sendLogin", async function(this: FastifyReply, { userId, restaurantId }: { userId: string; restaurantId?: string }) {
+  const loginInfo = await userControl.info({
+    userId,
+    restaurantId
+  });
+
+  const token = await this.jwtSign({
+    id: loginInfo.id,
+    restaurant: loginInfo.restaurant && {
+      id: loginInfo.restaurant.id,
+      role: loginInfo.restaurant.role
+    }
+  });
+
+  this.setCookie("token", token, {
+    path: "/",
+    httpOnly: true,
+    sameSite: "strict",
+    secure: import.meta.env.PROD
+  });
+
+  this.header("Authorization", `Bearer ${token}`);
+
+  return this.send(loginInfo);
+});
+
 fastify.register(import("@fastify/formbody"));
 fastify.register(import("@fastify/multipart"), { addToBody: true });
 fastify.addContentTypeParser(
@@ -157,6 +183,8 @@ fastify.addContentTypeParser(
 declare module "fastify" {
   interface FastifyReply {
     view: (element: JSX.Element) => FastifyReply;
+
+    sendLogin: ({ userId, restaurantId }: { userId: string, restaurantId?: string }) => Promise<FastifyReply>;
   }
 
   interface FastifyRequest {

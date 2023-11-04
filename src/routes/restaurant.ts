@@ -32,7 +32,9 @@ export default async function (fastify: FastifyInstance) {
     }
   );
 
-  fastify.post("/", {
+  fastify.post(
+    "/",
+    {
     schema: {
       body: {
         type: "object",
@@ -42,38 +44,22 @@ export default async function (fastify: FastifyInstance) {
         },
         required: ["name", "address"],
         additionalProperties: false
+        }
+      } as const
       },
-    } as const
-  }, async (request, reply) => {
+    async (request, reply) => {
     await fastify.authenticate(request, reply);
 
     const restaurantId = await restaurantControl.create(request.body);
-    await employeeControl.addEmployment(request.user.id, restaurantId, "admin");
+      await restaurantControl.addEmployment(
+        request.user.id,
+        restaurantId,
+        "admin"
+      );
 
-    const login = await restaurantControl.login({
-      userId: request.user.id,
-      restaurantId
-    });
-
-    const token = await reply.jwtSign({
-      id: login.id,
-      restaurant: {
-        id: login.restaurant.id,
-        role: login.restaurant.role
-      }
-    });
-
-    reply.setCookie("token", token, {
-      path: "/",
-      httpOnly: true,
-      sameSite: true,
-      secure: true
-    });
-
-    reply.header("Authorization", `Bearer ${token}`);
-
-    return reply.send(login);
-  });
+      return reply.sendLogin({ userId: request.user.id, restaurantId });
+    }
+  );
 
   fastify.post(
     "/login",

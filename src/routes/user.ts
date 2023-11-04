@@ -19,18 +19,14 @@ export default async function (fastify: FastifyInstance) {
           },
           required: ["username", "email", "password"],
           additionalProperties: false
-        },
-        response: {
-          201: { type: "string", const: "User created successfully" },
-          500: { type: "null" }
         }
       } as const
     },
     async (request, reply) => {
       const user = request.body;
-      await userControl.create(user);
+      const userId = await userControl.create(user);
 
-      return reply.code(201).send("User created successfully");
+      return reply.code(201).sendLogin({ userId });
     }
   );
 
@@ -105,24 +101,7 @@ export default async function (fastify: FastifyInstance) {
       const loginInfo = request.body;
       const user = await userControl.login(loginInfo);
 
-      const token = await reply.jwtSign({
-        id: user.id,
-        restaurant: user.restaurant
-          ? {
-              id: user.restaurant.id,
-              role: user.restaurant.role
-            }
-          : undefined
-      });
-
-      reply.setCookie("token", token, {
-        path: "/",
-        httpOnly: true,
-        sameSite: true,
-        secure: true
-      });
-
-      return reply.send(user);
+      return reply.sendLogin({ userId: user.id, restaurantId: loginInfo.restaurantId });
     }
   );
 
@@ -267,6 +246,22 @@ export default async function (fastify: FastifyInstance) {
       });
     }
   );
+
+  fastify.patch("/change-id", {
+    schema: {
+      response: {
+        200: {
+          type: "object",
+          description: "New login information for the user"
+        }
+      }
+    }
+  }, async (request, reply) => {
+    await fastify.authenticate(request, reply);
+
+    const newId = await userControl.changeId(request.user.id);
+    return reply.sendLogin({ userId: newId, restaurantId: request.user.restaurant?.id });
+  });
 
   fastify.get(
     "/restaurants",
