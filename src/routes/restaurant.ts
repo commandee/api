@@ -62,6 +62,14 @@ export default async function (fastify: FastifyInstance) {
     }
   );
 
+  fastify.get("/me", {}, async (request, reply) => {
+    await fastify.authenticateWithRestaurant(request, reply);
+
+    const restaurant = await restaurantControl.get(request.user.restaurant!.id);
+
+    return reply.send(restaurant);
+  });
+
   fastify.post(
     "/",
     {
@@ -88,6 +96,31 @@ export default async function (fastify: FastifyInstance) {
       );
 
       return reply.sendLogin({ userId: request.user.id, restaurantId });
+    }
+  );
+
+  fastify.patch(
+    "/",
+    {
+      schema: {
+        body: {
+          type: "object",
+          properties: {
+            name: { type: "string", minLength: 3, maxLength: 255 },
+            address: { type: "string", minLength: 3, maxLength: 255 }
+          },
+          additionalProperties: false
+        }
+      } as const
+    },
+    async (request, reply) => {
+      await fastify.authenticateWithRestaurant(request, reply);
+
+      const { id: restaurantId } = request.user.restaurant!;
+
+      await restaurantControl.update(restaurantId, request.body);
+
+      return reply.send("Restaurant updated successfully");
     }
   );
 
@@ -175,17 +208,7 @@ export default async function (fastify: FastifyInstance) {
 
   fastify.post("/logout", {}, async (request, reply) => {
     await fastify.authenticateWithRestaurant(request, reply);
-
-    const token = await reply.jwtSign({ id: request.user.id });
-
-    reply.setCookie("token", token, {
-      path: "/",
-      httpOnly: true,
-      sameSite: true,
-      secure: true
-    });
-
-    const login = await employeeControl.info({ userId: request.user.id });
-    return reply.send(login);
+    
+    return reply.sendLogin({ userId: request.user.id });
   });
 }

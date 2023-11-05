@@ -2,6 +2,48 @@ import type { FastifyInstance } from "../server";
 import * as userControl from "../controllers/employee";
 
 export default async function (fastify: FastifyInstance) {
+  fastify.get(
+    "/",
+    {
+      schema: {
+        summary: "Returns the current user",
+        tags: ["user"],
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              id: { type: "string", minLength: 16, maxLength: 16 },
+              username: { type: "string", minLength: 3, maxLength: 255 },
+              email: { type: "string", format: "email", maxLength: 255 },
+              restaurant: {
+                type: "object",
+                properties: {
+                  id: { type: "string", minLength: 16, maxLength: 16 },
+                  name: { type: "string", minLength: 3, maxLength: 255 },
+                  address: { type: "string", minLength: 3, maxLength: 255 },
+                  role: { type: "string", enum: ["admin", "employee"] }
+                },
+                required: ["id", "name", "address", "role"]
+              }
+            },
+            required: ["id", "username", "email"],
+            description: "The user has been logged in successfully"
+          }
+        }
+      } as const
+    },
+    async (request, reply) => {
+      await fastify.authenticate(request, reply);
+
+      return reply.send(
+        await userControl.info({
+          userId: request.user.id,
+          restaurantId: request.user.restaurant?.id
+        })
+      );
+    }
+  );
+
   fastify.post(
     "/",
     {
@@ -25,6 +67,37 @@ export default async function (fastify: FastifyInstance) {
       const userId = await userControl.create(user);
 
       return reply.code(201).sendLogin({ userId });
+    }
+  );
+
+  fastify.patch(
+    "/",
+    {
+      schema: {
+        summary: "Update user",
+        tags: ["user"],
+        body: {
+          type: "object",
+          properties: {
+            username: { type: "string", minLength: 3, maxLength: 255 },
+            email: { type: "string", format: "email", maxLength: 255 },
+            password: { type: "string", minLength: 8, maxLength: 255 }
+          },
+          additionalProperties: false
+        }
+      } as const
+    },
+    async (request, reply) => {
+      await fastify.authenticate(request, reply);
+
+      const user = request.body;
+      const userId = request.user.id;
+      await userControl.update(userId, user);
+
+      return reply.sendLogin({
+        userId,
+        restaurantId: request.user.restaurant?.id
+      });
     }
   );
 
@@ -116,48 +189,6 @@ export default async function (fastify: FastifyInstance) {
 
     return reply.send("User logged out successfully");
   });
-
-  fastify.get(
-    "/whoami",
-    {
-      schema: {
-        summary: "Returns username",
-        tags: ["user"],
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              id: { type: "string", minLength: 16, maxLength: 16 },
-              username: { type: "string", minLength: 3, maxLength: 255 },
-              email: { type: "string", format: "email", maxLength: 255 },
-              restaurant: {
-                type: "object",
-                properties: {
-                  id: { type: "string", minLength: 16, maxLength: 16 },
-                  name: { type: "string", minLength: 3, maxLength: 255 },
-                  address: { type: "string", minLength: 3, maxLength: 255 },
-                  role: { type: "string", enum: ["admin", "employee"] }
-                },
-                required: ["id", "name", "address", "role"]
-              }
-            },
-            required: ["id", "username", "email"],
-            description: "The user has been logged in successfully"
-          }
-        }
-      } as const
-    },
-    async (request, reply) => {
-      await fastify.authenticate(request, reply);
-
-      return reply.send(
-        await userControl.info({
-          userId: request.user.id,
-          restaurantId: request.user.restaurant?.id
-        })
-      );
-    }
-  );
 
   fastify.delete(
     "/",

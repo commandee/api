@@ -89,6 +89,37 @@ export async function create(
   }
 }
 
+export async function update(
+  orderId: string,
+  order: {
+    notes?: string;
+    quantity?: number;
+    priority?: Priority;
+    status?: Status;
+  }
+): Promise<void> {
+  const result = await db
+    .updateTable("order")
+    .set(order)
+    .where("public_id", "=", orderId)
+    .executeTakeFirst();
+
+  if (result.numUpdatedRows !== 1n) {
+    throw new APIError("Order not found", 404);
+  }
+}
+
+export async function del(id: string): Promise<void> {
+  const result = await db
+    .deleteFrom("order")
+    .where("public_id", "=", id)
+    .executeTakeFirst();
+
+  if (result?.numDeletedRows !== 1n) {
+    throw new APIError("Order not found", 404);
+  }
+}
+
 type Order = {
   id: string;
   notes?: string | undefined;

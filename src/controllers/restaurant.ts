@@ -37,6 +37,21 @@ export async function create(restaurant: {
   return public_id;
 }
 
+export async function update(restaurantId: string, data: {
+  name?: string;
+  address?: string;
+}) {
+  const result = await db
+    .updateTable("restaurant")
+    .set(data)
+    .where("public_id", "=", restaurantId)
+    .executeTakeFirst();
+
+  if (result?.numUpdatedRows !== 1n) {
+    throw new APIError("Restaurant not found", 404);
+  }
+}
+
 export async function login({
   userId,
   restaurantId
@@ -109,8 +124,11 @@ export async function addEmployment(
 }
 
 export async function dismiss(employeeId: string, restaurantId: string) {
+  await isEmployee(employeeId, restaurantId);
+
   const result = await db
     .deleteFrom("employment")
+    .using("employment")
     .innerJoin("restaurant", "restaurant.id", "employment.restaurant_id")
     .innerJoin("employee", "employee.id", "employment.employee_id")
     .where("employee.public_id", "=", employeeId)
@@ -118,7 +136,7 @@ export async function dismiss(employeeId: string, restaurantId: string) {
     .executeTakeFirst();
 
   if (result?.numDeletedRows !== 1n) {
-    throw new APIError("Employment not deleted", 500);
+    throw new APIError("Employment not deleted", 404);
   }
 }
 
@@ -127,6 +145,8 @@ export async function setRole(
   restaurantId: string,
   role: Role
 ) {
+  await isEmployee(employeeId, restaurantId);
+  
   const result = await db
     .updateTable("employment")
     .set({ role })

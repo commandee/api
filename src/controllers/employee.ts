@@ -69,6 +69,24 @@ export async function create(employee: {
   return publicId;
 }
 
+export async function update(
+  id: string,
+  data: { username?: string; email?: string; password?: string }
+) {
+  const result = await db
+    .updateTable("employee")
+    .set({
+      ...data,
+      password: data.password ? await encrypt(data.password) : undefined
+    })
+    .where("public_id", "=", id)
+    .executeTakeFirst();
+
+  if (result?.numUpdatedRows !== 1n) {
+    throw new APIError("Employee not found", 404);
+  }
+}
+
 export async function login({
   email,
   password,

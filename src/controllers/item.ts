@@ -84,6 +84,26 @@ export async function getAllFrom(restaurantId: string, includeUnavailable: boole
   }));
 }
 
+export async function update(id: string, data: {
+  name?: string;
+  price?: number;
+  description?: string;
+  available?: boolean;
+}): Promise<void> {
+  const result = await db
+    .updateTable("item")
+    .set({
+      ...data,
+      available: data.available ? 1 : 0
+    })
+    .where("public_id", "=", id)
+    .executeTakeFirst();
+
+  if (result?.numUpdatedRows !== 1n) {
+    throw new APIError("Item not found", 404);
+  }
+}
+
 export async function del(itemId: string): Promise<void> {
   const result = await db
     .deleteFrom("item")

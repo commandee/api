@@ -123,24 +123,47 @@ export default async function (fastify: FastifyInstance) {
   );
 
   fastify.patch(
-    "/available",
+    "/:id",
     {
       schema: {
-        body: {
+        params: {
           type: "object",
           properties: {
-            itemId: {
+            id: {
               type: "string",
               minLength: 16,
               maxLength: 16,
               description: "Public ID of the item"
+            }
+          },
+          required: ["id"]
+        },
+        body: {
+          type: "object",
+          properties: {
+            name: {
+              type: "string",
+              minLength: 3,
+              maxLength: 255,
+              description: "Name of item"
+            },
+            price: {
+              type: "integer",
+              minimum: 0,
+              default: 0,
+              description: "Price in cents"
+            },
+            description: {
+              type: "string",
+              maxLength: 255,
+              description: "Optional description of item"
             },
             available: {
               type: "boolean",
+              default: true,
               description: "Whether the item is available or not"
             }
           },
-          required: ["itemId", "available"],
           additionalProperties: false
         }
       } as const
@@ -148,8 +171,7 @@ export default async function (fastify: FastifyInstance) {
     async (request, reply) => {
       await fastify.authenticateWithRestaurant(request, reply);
 
-      const itemId = request.body.itemId;
-      const available = request.body.available;
+      const itemId = request.params.id;
 
       const item = await itemControl.get(itemId);
 
@@ -157,7 +179,7 @@ export default async function (fastify: FastifyInstance) {
         throw new APIError("You don't have access to this item", 403);
       }
 
-      await itemControl.setAvailable(itemId, available);
+      await itemControl.update(itemId, request.body);
 
       return reply.send("Item availability updated successfully");
     }
