@@ -134,8 +134,19 @@ type Order = {
   };
 };
 
-export async function getAllFrom(restaurantId: string): Promise<Order[]> {
-  const result = await db
+export async function getAllFrom(
+  restaurantId: string,
+  parameters: {
+    orderBy?: "createdAt" | "priority" | "status" | "quantity";
+    order?: "asc" | "desc";
+    limit?: number;
+    where?: {
+      status?: Status;
+      priority?: Priority;
+    };
+  }
+): Promise<Order[]> {
+  let query = db
     .selectFrom("order")
     .innerJoin("item", "item.id", "order.item_id")
     .innerJoin("restaurant", "restaurant.id", "item.restaurant_id")
@@ -150,8 +161,26 @@ export async function getAllFrom(restaurantId: string): Promise<Order[]> {
       "item.name as itemName",
       "item.description as itemDescription"
     ])
-    .where("restaurant.public_id", "=", restaurantId)
-    .execute();
+    .where("restaurant.public_id", "=", restaurantId);
+
+  if (parameters.orderBy) {
+    const orderBy =
+      parameters.orderBy === "createdAt" ? "created" : parameters.orderBy;
+    query = query.orderBy(orderBy, parameters.order);
+  }
+
+  if (parameters.limit) {
+    query = query.limit(parameters.limit);
+  }
+
+  if (parameters.where) {
+    Object.entries(parameters.where).forEach((pair) => {
+      if (!pair[1]) return;
+      query = query.where(pair[0], "=", pair[1]);
+    });
+  }
+
+  const result = await query.execute();
 
   return result.map((order) => parseOrder(order));
 }

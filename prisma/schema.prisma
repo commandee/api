@@ -20,21 +20,21 @@ model Commanda {
   restaurantId Bytes      @map("restaurant_id") @db.Binary(16)
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
-  @@map("commanda")
   @@index([restaurantId])
+  @@map("commanda")
 }
 
 model Employee {
-  id       Bytes         @id @default(dbgenerated("(UUID_TO_BIN(UUID()))")) @db.Binary(16)
-  username String        @unique @db.VarChar(255)
-  email    String        @unique @db.VarChar(255)
-  password String        @db.VarChar(255)
-  publicId String        @unique @map("public_id") @db.Char(16)
+  id       Bytes        @id @default(dbgenerated("(UUID_TO_BIN(UUID()))")) @db.Binary(16)
+  username String       @unique @db.VarChar(255)
+  email    String       @unique @db.VarChar(255)
+  password String       @db.VarChar(255)
+  publicId String       @unique @map("public_id") @db.Char(16)
   worksAt  Employment[]
 
-  @@map("employee")
   @@index([email])
   @@index([username])
+  @@map("employee")
 }
 
 model Employment {
@@ -75,16 +75,17 @@ model Item {
 }
 
 model Order {
-  id           Bytes      @id @default(dbgenerated("(UUID_TO_BIN(UUID()))")) @db.Binary(16)
-  commandaId   Bytes      @map("commanda_id") @db.Binary(16)
-  itemId       Bytes      @map("item_id") @db.Binary(16)
-  quantity     Int        @default(1) @db.UnsignedTinyInt
-  priority     Priority   @default(low)
-  status       Status     @default(pending)
-  notes        String?    @db.VarChar(512)
-  publicId     String     @unique @map("public_id") @db.Char(16)
-  commanda     Commanda   @relation(fields: [commandaId], references: [id], onDelete: Cascade)
-  item         Item       @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  id         Bytes    @id @default(dbgenerated("(UUID_TO_BIN(UUID()))")) @db.Binary(16)
+  commandaId Bytes    @map("commanda_id") @db.Binary(16)
+  itemId     Bytes    @map("item_id") @db.Binary(16)
+  quantity   Int      @default(1) @db.UnsignedTinyInt
+  priority   Priority @default(low)
+  status     Status   @default(pending)
+  notes      String?  @db.VarChar(512)
+  publicId   String   @unique @map("public_id") @db.Char(16)
+  commanda   Commanda @relation(fields: [commandaId], references: [id], onDelete: Cascade)
+  item       Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  created    DateTime @default(dbgenerated("(NOW())")) @map("created")
 
   @@index([itemId])
   @@index([commandaId])
@@ -92,10 +93,10 @@ model Order {
 }
 
 model Restaurant {
-  id           Bytes         @id @default(dbgenerated("(UUID_TO_BIN(UUID()))")) @db.Binary(16)
-  name         String        @unique @db.VarChar(255)
-  address      String        @db.VarChar(255)
-  publicId     String        @unique @map("public_id") @db.Char(16)
+  id           Bytes        @id @default(dbgenerated("(UUID_TO_BIN(UUID()))")) @db.Binary(16)
+  name         String       @unique @db.VarChar(255)
+  address      String       @db.VarChar(255)
+  publicId     String       @unique @map("public_id") @db.Char(16)
   employements Employment[]
   commandas    Commanda[]
   items        Item[]

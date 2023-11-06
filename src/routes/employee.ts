@@ -128,45 +128,6 @@ export default async function (fastify: FastifyInstance) {
     }
   );
 
-  fastify.delete(
-    "/:id",
-    {
-      schema: {
-        params: {
-          type: "object",
-          properties: {
-            id: {
-              type: "string",
-              minLength: 16,
-              maxLength: 16,
-              description: "Public ID of the user"
-            }
-          },
-          required: ["id"]
-        }
-      } as const
-    },
-    async (request, reply) => {
-      await fastify.authenticateWithRestaurant(request, reply);
-
-      const { id: employeeId } = request.params;
-      const { id: restaurantId } = request.user.restaurant!;
-
-      if (employeeId === request.user.id)
-        throw new APIError("You cannot dismiss yourself", 403);
-
-      if (request.user.restaurant!.role !== "admin")
-        throw new APIError(
-          "You don't have permission to dismiss employees",
-          403
-        );
-
-      await restaurantControl.dismiss(employeeId, restaurantId);
-
-      return reply.send("Employee dismissed successfully.");
-    }
-  );
-
   fastify.patch(
     "/:id",
     {
@@ -208,6 +169,45 @@ export default async function (fastify: FastifyInstance) {
       );
 
       return reply.send("Employee updated successfully.");
+    }
+  );
+
+  fastify.delete(
+    "/:id",
+    {
+      schema: {
+        params: {
+          type: "object",
+          properties: {
+            id: {
+              type: "string",
+              minLength: 16,
+              maxLength: 16,
+              description: "Public ID of the user"
+            }
+          },
+          required: ["id"]
+        }
+      } as const
+    },
+    async (request, reply) => {
+      await fastify.authenticateWithRestaurant(request, reply);
+
+      const { id: employeeId } = request.params;
+      const { id: restaurantId } = request.user.restaurant!;
+
+      if (employeeId === request.user.id)
+        throw new APIError("You cannot dismiss yourself", 403);
+
+      if (request.user.restaurant!.role !== "admin")
+        throw new APIError(
+          "You don't have permission to dismiss employees",
+          403
+        );
+
+      await restaurantControl.dismiss(employeeId, restaurantId);
+
+      return reply.send("Employee dismissed successfully.");
     }
   );
 
