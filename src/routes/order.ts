@@ -59,35 +59,40 @@ export default async function (fastify: FastifyInstance) {
   );
 
   fastify.post(
-    "/",
+    "/:commandaId",
     {
       schema: {
+        params: {
+          type: "object",
+          properties: {
+            commandaId: {
+              type: "string",
+              minLength: 16,
+              maxLength: 16,
+              description: "Public ID of the commanda"
+            }
+          },
+          required: ["commandaId"]
+        },
         body: {
           type: "object",
           properties: {
-            order: {
-              type: "object",
-              properties: {
-                notes: { type: "string", maxLength: 255 },
-                quantity: { type: "number", minimum: 1, default: 1 },
-                priority: {
-                  type: "string",
-                  enum: ["low", "medium", "high"],
-                  default: "low"
-                },
-                status: {
-                  type: "string",
-                  enum: ["pending", "in_progress", "done"],
-                  default: "pending"
-                },
-                itemId: { type: "string", minLength: 16, maxLength: 16 }
-              },
-              required: ["itemId"],
-              additionalProperties: false
+            notes: { type: "string", maxLength: 255 },
+            quantity: { type: "number", minimum: 1, default: 1 },
+            priority: {
+              type: "string",
+              enum: ["low", "medium", "high"],
+              default: "low"
             },
-            commandaId: { type: "string", minLength: 16, maxLength: 16 }
+            status: {
+              type: "string",
+              enum: ["pending", "in_progress", "done"],
+              default: "pending"
+            },
+            itemId: { type: "string", minLength: 16, maxLength: 16 },
           },
-          required: ["order", "commandaId"]
+          required: ["itemId"],
+          additionalProperties: false
         }
       } as const
     },
@@ -96,11 +101,11 @@ export default async function (fastify: FastifyInstance) {
 
       if (
         request.user?.restaurant?.id !=
-        (await itemControl.get(request.body.order.itemId)).restaurantId
+        (await itemControl.get(request.body.itemId)).restaurantId
       )
         throw new APIError("You don't have access to this item", 403);
 
-      await orderControl.create(request.body.order, request.body.commandaId);
+      await orderControl.create(request.body, request.params.commandaId);
       return reply.send("Order placed successfully");
     }
   );

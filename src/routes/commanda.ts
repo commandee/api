@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "../server";
 
 import * as commandaControl from "../controllers/commanda";
+import * as orderControl from "../controllers/order";
 import APIError from "../api_error";
 
 export default async function (fastify: FastifyInstance) {
@@ -9,37 +10,6 @@ export default async function (fastify: FastifyInstance) {
     {
       schema: {
         summary: "Get all commandas from the restaurant",
-        response: {
-          200: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                costumer: {
-                  type: "string",
-                  minLength: 2,
-                  maxLength: 255
-                },
-                table: {
-                  type: "integer",
-                  minimum: 1,
-                  maximum: 255,
-                  description:
-                    "Number of the table for the commanda (optional)",
-                  nullable: true
-                },
-                id: {
-                  type: "string",
-                  minLength: 16,
-                  maxLength: 16,
-                  description: "Public ID of the commanda"
-                }
-              },
-              required: ["costumer", "id"],
-              additionalProperties: false
-            }
-          }
-        }
       } as const
     },
     async (request, reply) => {
@@ -83,6 +53,36 @@ export default async function (fastify: FastifyInstance) {
       return reply.send(commanda);
     }
   );
+
+  fastify.get("/:id/orders", {
+    schema: {
+      params: {
+        type: "object",
+        properties: {
+          id: {
+            type: "string",
+            minLength: 16,
+            maxLength: 16,
+            description: "Public ID of the commanda"
+          },
+        },
+        required: ["id"],
+        additionalProperties: false
+      }
+    } as const
+  }, async (request, reply) => {
+    await fastify.authenticateWithRestaurant(request, reply);
+
+    const commandaId = request.params.id;
+    const commanda = await commandaControl.get(commandaId);
+
+    if (commanda.restaurantId != request.user.restaurant!.id)
+      throw new APIError("Você não tem acesso a essa commanda.", 403);
+
+    const orders = await commandaControl.getOrders(commandaId);
+
+    return reply.send(orders);
+  });
 
   fastify.post(
     "/",

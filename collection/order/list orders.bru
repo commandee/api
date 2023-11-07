@@ -1,0 +1,17 @@
+meta {
+  name: list orders
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{url}}/order?limit=2&orderBy=priority
+  body: none
+  auth: none
+}
+
+query {
+  limit: 2
+  orderBy: priority
+  ~order: desc
+}

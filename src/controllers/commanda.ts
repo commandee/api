@@ -18,17 +18,35 @@ export async function getAll(restaurantId: string) {
   return result;
 }
 
-export async function get(id: string) {
-  const commanda = await db
+export async function getOrders(id: string) {
+  const result = await db
     .selectFrom("order")
     .innerJoin("commanda", "commanda.id", "order.commanda_id")
     .innerJoin("item", "item.id", "order.item_id")
-    .innerJoin("restaurant", "restaurant.id", "item.restaurant_id")
+    .select([
+      "order.priority",
+      "order.status",
+      "order.public_id as id",
+      "commanda.public_id as commandaId",
+      "order.quantity",
+      "order.notes",
+      "item.public_id as itemId",
+    ])
+    .where("commanda.public_id", "=", id)
+    .execute();
+
+  return result;
+}
+
+export async function get(id: string) {
+  const commanda = await db
+    .selectFrom("commanda")
+    .innerJoin("restaurant", "restaurant.id", "commanda.restaurant_id")
     .select([
       "commanda.costumer",
       "commanda.table",
       "commanda.public_id as id",
-      "restaurant.public_id as restaurantId"
+      "restaurant.public_id as restaurantId",
     ])
     .where("commanda.public_id", "=", id)
     .executeTakeFirstOrThrow(APIError.noResult("Commanda not found"));

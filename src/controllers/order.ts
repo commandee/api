@@ -4,16 +4,20 @@ import db from "../database/db";
 import type { Priority, Status } from "../database/generated/schema/enums";
 import { areFromSameRestaurant } from "./restaurant";
 
+import * as itemControl from "./item";
+import * as commandaControl from "./commanda";
+
 function parseOrder(result: {
-  id: string;
+  id: string; 
   quantity: number;
   priority: "low" | "medium" | "high";
   status: "pending" | "in_progress" | "done";
   notes: string | null;
   itemId: string;
-  restaurantId: string;
+  commandaId: string;
   itemName: string;
   itemDescription: string | null;
+  restaurantId: string;
 }): Order {
   return {
     id: result.id,
@@ -22,6 +26,7 @@ function parseOrder(result: {
     status: result.status,
     notes: result.notes || undefined,
     restaurantId: result.restaurantId,
+    commandaId: result.commandaId,
     item: {
       id: result.itemId,
       name: result.itemName,
@@ -62,10 +67,14 @@ export async function create(
   },
   commandaId: string
 ): Promise<void> {
-  const [publicId] = await Promise.all([
+  const [publicId, item, commanda] = await Promise.all([
     genID(),
-    areFromSameRestaurant(commandaId, order.itemId)
+    itemControl.get(order.itemId),
+    commandaControl.get(commandaId)
   ]);
+
+  if (item.restaurantId !== commanda.restaurantId)
+    throw new APIError("Item and commanda must belong to the same restaurant", 403);
 
   const result = await db
     .insertInto("order")
@@ -150,13 +159,15 @@ export async function getAllFrom(
     .selectFrom("order")
     .innerJoin("item", "item.id", "order.item_id")
     .innerJoin("restaurant", "restaurant.id", "item.restaurant_id")
+    .innerJoin("commanda", "commanda.id", "order.commanda_id")
     .select([
-      "public_id as id",
+      "order.public_id as id",
       "order.notes",
       "quantity",
       "status",
       "priority",
       "item.public_id as itemId",
+      "commanda.public_id as commandaId",
       "restaurant.public_id as restaurantId",
       "item.name as itemName",
       "item.description as itemDescription"
